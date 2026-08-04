@@ -22,8 +22,8 @@ use App\Http\Controllers\Logistics\MaintenanceController;
 use App\Http\Controllers\Logistics\InspectionController;
 use App\Http\Controllers\Logistics\TyreManagementController;
 use App\Http\Controllers\ExpenseController;
-Route::post('/sap/outstanding', [\App\Http\Controllers\SapController::class, 'fetchOutstanding']);
-Route::post('/sap/downloadLedger', [\App\Http\Controllers\SapController::class, 'downloadLedger']);
+Route::post('/sap/outstanding', [\App\Http\Controllers\SAPController::class, 'fetchOutstanding']);
+Route::post('/sap/downloadLedger', [\App\Http\Controllers\SAPController::class, 'downloadLedger']);
     Route::post('/SalesOrderDetails', [SAPController::class, 'sendSalesOrder']);
     Route::prefix('v1')->group(function () {
         Route::post('test-push', [AuthController::class, 'testPush']);

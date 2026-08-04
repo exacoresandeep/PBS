@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-class SapController extends Controller
+class SAPController extends Controller
 {
 	public function fetchOutstanding(Request $request)
 	{
