@@ -1091,30 +1091,31 @@ class LeadController extends Controller
             // $visit->update(['balance_deal_volume' => $balance]);
 
 
-          if ($balance <= 0 || in_array($visit->status, ['Lost', 'Won'], true)) {
-             $total_deal_volume=0;
-             if ($visit->status === 'Lost' || $visit->status === 'Won') {
-                $total_deal_volume = $request->total_deal_volume;
-             }
-                $newVisit = InfluencerVisit::create([
-                    'influencer_name'     => $visit->influencer_name,
-                    'phone'               => $visit->phone,
-                    'place'               => $visit->place,
-                    'influencer_type'     => $visit->influencer_type,
-                    'visit_type'          => $visit->visit_type,
-                    'purpose'             => $visit->purpose,
-                    'district_id'         => $visit->district_id,
-                    'lead_type'           => $visit->lead_type,
-                    'current_project'     => $visit->current_project,
-                    'upcoming_project'    => $visit->upcoming_project,
-                    // 'steel_used'          => $visit->steel_used,
-                    // 'other_steels'        => $visit->other_steels,
-                    'total_deal_volume'   => $total_deal_volume,
-                    'status'              => 'Opened',
-                    'chain_id'            => $visit->id,
-                    'created_by'          => $visit->created_by,
-                ]);
-            }
+            // if ($balance <= 0 || in_array($visit->status, ['Lost', 'Won'], true)) {
+            //     $total_deal_volume=0;
+            //     if ($visit->status === 'Lost' || $visit->status === 'Won') {
+            //         $total_deal_volume = $request->total_deal_volume;
+            //     }
+            //     $newVisit = InfluencerVisit::create([
+            //         'influencer_name'     => $visit->influencer_name,
+            //         'phone'               => $visit->phone,
+            //         'place'               => $visit->place,
+            //         'influencer_type'     => $visit->influencer_type,
+            //         'visit_type'          => $visit->visit_type,
+            //         'purpose'             => $visit->purpose,
+            //         'district_id'         => $visit->district_id,
+            //         'lead_type'           => $visit->lead_type,
+            //         'current_project'     => $visit->current_project,
+            //         'upcoming_project'    => $visit->upcoming_project,
+            //         // 'steel_used'          => $visit->steel_used,
+            //         // 'other_steels'        => $visit->other_steels,
+
+            //         'total_deal_volume'   => $total_deal_volume,
+            //         'status'              => 'Opened',
+            //         'chain_id'            => $visit->id,
+            //         'created_by'          => $visit->created_by,
+            //     ]);
+            // }
 
             DB::commit();
 
