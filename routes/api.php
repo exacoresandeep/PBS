@@ -22,6 +22,9 @@ use App\Http\Controllers\Logistics\MaintenanceController;
 use App\Http\Controllers\Logistics\InspectionController;
 use App\Http\Controllers\Logistics\TyreManagementController;
 use App\Http\Controllers\ExpenseController;
+Route::get('/test-api', function () {
+    return 'API Working';
+});
 Route::post('/sap/outstanding', [\App\Http\Controllers\SAPController::class, 'fetchOutstanding']);
 Route::post('/sap/downloadLedger', [\App\Http\Controllers\SAPController::class, 'downloadLedger']);
     Route::post('/SalesOrderDetails', [SAPController::class, 'sendSalesOrder']);
