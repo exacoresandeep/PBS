@@ -49,6 +49,8 @@ class Lead extends Model
     ];
     protected $casts = [
         'lead_chain_id' => 'string',
+        'latitude' => 'string',
+        'longitude' => 'string',
     ];
    
     public function customerType()

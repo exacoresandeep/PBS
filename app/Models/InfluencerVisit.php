@@ -17,8 +17,8 @@ class InfluencerVisit extends Model
         'lead_type',
         'current_project',
         'upcoming_project',
-        'steel_used',
-        'other_steels',
+        // 'steel_used',
+        // 'other_steels',
         'total_deal_volume',
         'won_volume',
         'follow_up_date',
@@ -33,6 +33,8 @@ class InfluencerVisit extends Model
     protected $casts = [
         'steel_used' => 'array', 
         'follow_up_date' => 'date',
+        'latitude' => 'string',
+        'longitude' => 'string',
 
     ];
  

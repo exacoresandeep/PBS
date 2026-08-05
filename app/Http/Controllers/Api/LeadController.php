@@ -979,6 +979,8 @@ class LeadController extends Controller
                 'influencer_type'     => 'required|string|max:255',
                 'district_id'         => 'required|integer',
                 'status'              => 'required|in:Opened,Follow Up,Won,Lost',             
+                'latitude'            => 'required',             
+                'longitude'           => 'required',             
 
                 // Follow Up
                 'visit_type'          => 'required_if:status,Follow Up|string|max:255',
@@ -1033,6 +1035,8 @@ class LeadController extends Controller
                     'influencer_visit_id' => $visit->id,
                     'follow_up_date'      => $request->follow_up_date,
                     'reason'              => $request->follow_up_reason,
+                    'latitude'            => $request->latitude,       
+                    'longitude'           => $request->longitude,
                     'notification_status' => 'pending',
                     'created_by'          => Auth::id(),
                 ]);
@@ -1076,6 +1080,8 @@ class LeadController extends Controller
                         'vehicle_category_id' => $details['vehicle_category_id'] ?? null,
                         'attachment'          => $details['attachment'] ?? null,
                         'total_amount'        => $details['total_amount'] ?? null,
+                        'latitude'            => $request->latitude,       
+                        'longitude'           => $request->longitude,
                         'source'              => 'influencer_won',
                         'status'              => 'Pending',
                         'created_by'          => Auth::id(),
@@ -1155,6 +1161,9 @@ class LeadController extends Controller
                 'order_details.dealer_id'        => 'nullable|exists:dealers,id',
                 'order_details.payment_terms_id' => 'nullable|exists:payment_terms,id',
                 'order_details.total_amount'     => 'nullable|numeric',
+                'latitude'            => 'required',             
+                'longitude'           => 'required', 
+                
             ]);
 
             $visit = InfluencerVisit::findOrFail($visitId);
@@ -1217,6 +1226,8 @@ class LeadController extends Controller
                         'vehicle_category_id' => $details['vehicle_category_id'] ?? null,
                         'source'              => 'influencer_won',
                         'status'              => 'Pending',
+                        'latitude'            => $request->latitude,       
+                        'longitude'           => $request->longitude,
                         'created_by'          => Auth::id(),
                     ]);
 
@@ -1269,9 +1280,11 @@ class LeadController extends Controller
                     'lead_type'         => $visit->lead_type,
                     'current_project'   => $visit->current_project,
                     'upcoming_project'  => $visit->upcoming_project,
-                    'steel_used'        => $visit->steel_used,
-                    'other_steels'      => $visit->other_steels,
+                    // 'steel_used'        => $visit->steel_used,
+                    // 'other_steels'      => $visit->other_steels,
                     'total_deal_volume' => $balance,
+                    'latitude'            => $request->latitude,       
+                    'longitude'           => $request->longitude, 
                     'status'            => 'Follow Up',
                     'chain_id'          => $rootChainId,   // <-- use root id
                     'created_by'        => $visit->created_by,
@@ -1292,8 +1305,10 @@ class LeadController extends Controller
                     'lead_type'         => $visit->lead_type,
                     'current_project'   => $visit->current_project,
                     'upcoming_project'  => $visit->upcoming_project,
-                    'steel_used'        => $visit->steel_used,
-                    'other_steels'      => $visit->other_steels,
+                    // 'steel_used'        => $visit->steel_used,
+                    // 'other_steels'      => $visit->other_steels,
+                    'latitude'            => $request->latitude,       
+                    'longitude'           => $request->longitude,
                     'total_deal_volume' => 0,
                     'status'            => 'Opened',
                     'chain_id'          => 0,  // keep same chain if desired; set null if you want new root
@@ -1418,62 +1433,7 @@ public function influencerVisitListing(Request $request)
         ], 500);
     }
 }
-    public function influencerVisitListingOld(Request $request)
-    {
-        try {
-            $employee = Auth::user(); // Get the logged-in employee
-
-            if (!$employee) {
-                return response()->json([
-                    'success' => false,
-                    'statusCode' => 401,
-                    'message' => "User not Authenticated",
-                ], 401);
-            }
-            $visits = InfluencerVisit::select(
-                'id',
-                'influencer_name',
-                'purpose',
-                'created_at',
-		'updated_at',
-	       	'follow_up_date',
-                'status'
-            )
-                ->where('created_by', $employee->id)
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->map(function ($visit) {
-                    return [
-                        'id' => $visit->id,
-                        'influencer_name' => $visit->influencer_name,
-                        'purpose' => $visit->purpose,
-                        //                     'created_at' => $visit->created_at ? $visit->created_at->format('d/m/Y') : null,
-                        'created_at' => ($visit->status === 'Follow Up' || $visit->status === 'Won' || $visit->status === 'Lost')
-                            ? optional($visit->updated_at)->format('d/m/Y h:i A')
-                            : optional($visit->created_at)->format('d/m/Y h:i A'),
-			    'follow_up_date' => optional($visit->follow_up_date)->format('d/m/Y h:i A') ?? null,
-			    'status' => $visit->status,
-                    ];
-                });
-            InfluencerVisitFollowUp::where('created_by', $employee->id)
-                ->where('notification_status', 'pending')
-                ->update([
-                    'notification_status' => 'opened'
-                ]);
-            return response()->json([
-                'success' => true,
-                'statusCode' => 200,
-                'message' => 'Influencer visit list fetched successfully.',
-                'data' => $visits,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'statusCode' => 500,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
+    
     public function influencerOpenList()
     {
         return $this->getInfluencerVisitListByStatus(['Opened', 'Follow Up']);
@@ -1727,8 +1687,8 @@ private function getInfluencerVisitListByStatus(array $statuses, $productId = nu
             $data['follow_up_date'] = optional($visit->follow_up_date)->format('d/m/Y');
             $data['current_project'] = $visit->current_project;
             $data['upcoming_project'] = $visit->upcoming_project;
-            $data['steel_used'] = $visit->steel_used;
-            $data['other_steels'] = $visit->other_steels;
+            // $data['steel_used'] = $visit->steel_used;
+            // $data['other_steels'] = $visit->other_steels;
 
 
             if ($visit->chain_id) {

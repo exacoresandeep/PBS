@@ -1,0 +1,39 @@
+1.  influencer_visits
+        Adds (+)
+            customer_name	varchar(255)	utf8mb4_general_ci		Yes	NULL			Change Change	Drop Drop	
+            site_details	varchar(255)
+            ALTER TABLE influencer_visits
+            ADD COLUMN latitude DECIMAL(10,8) NULL AFTER chain_id,
+            ADD COLUMN longitude DECIMAL(11,8) NULL AFTER latitude;
+        Removals (-)
+            'steel_used'  
+            'other_steels'    
+
+2.  leads
+        Adds (+)            
+            ALTER TABLE leads
+            ADD COLUMN latitude DECIMAL(10,8) NULL AFTER `lead_chain_id`,
+            ADD COLUMN longitude DECIMAL(11,8) NULL AFTER latitude;
+        Removals (-)
+3.  dealer_visits
+        Adds (+)            
+            ALTER TABLE dealer_visits
+            ADD COLUMN latitude DECIMAL(10,8) NULL AFTER `new_order`,
+            ADD COLUMN longitude DECIMAL(11,8) NULL AFTER latitude;
+        Removals (-)
+4.  orders
+        Adds (+)            
+            ALTER TABLE orders
+            ADD COLUMN latitude DECIMAL(10,8) NULL AFTER `created_by`,
+            ADD COLUMN longitude DECIMAL(11,8) NULL AFTER latitude;
+        Removals (-)
+5.  activities
+        Adds (+)            
+            ALTER TABLE activities
+            ADD COLUMN latitude DECIMAL(10,8) NULL AFTER `created_by`,
+            ADD COLUMN longitude DECIMAL(11,8) NULL AFTER latitude;
+        Removals (-)
+
+
+
+                    

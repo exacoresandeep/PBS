@@ -21,6 +21,8 @@ class DealerVisit extends Model
      protected $casts = [
         'attachments' => 'array', // store as JSON
         'stock_details' => 'array', // store as JSON
+        'latitude' => 'string',
+        'longitude' => 'string',
     ];
     public $timestamps = false; 
 

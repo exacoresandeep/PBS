@@ -28,6 +28,8 @@ class Activity extends Model
     ];
     protected $casts = [
         'attachments' => 'array', 
+        'latitude' => 'string',
+        'longitude' => 'string',
       //  'completed_date' => 'date',
      //   'assigned_date' => 'date',
     ];

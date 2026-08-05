@@ -82,6 +82,8 @@ class Order extends Model
         'billing_date' => 'date',
         'delivery_date' => 'date',
         'payment_date' => 'date',
+        'latitude' => 'string',
+        'longitude' => 'string',
         
     ];
     public function getBillingDateAttribute($value)
