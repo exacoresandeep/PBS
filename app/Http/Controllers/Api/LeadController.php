@@ -55,6 +55,8 @@ class LeadController extends Controller
                             'id' => $lead->district->id,
                             'name' => $lead->district->name,
                         ] : null,
+                        'latitude' => $lead->latitude,
+                        'longitude' => $lead->longitude,
                         'route_name' => $lead->tripRoute ? $lead->tripRoute->route_name : null,
                         'location_name' => $lead->location ? $lead->location : null,
                         'created_at' => $lead->created_at->format('d/M/Y h:i A'),
@@ -97,6 +99,10 @@ class LeadController extends Controller
                 'location' => 'required|string',
                 'district_id' => 'required|exists:districts,id',
                 'assigned_route_id' => 'required|exists:assigned_routes,id',
+                'ace_code' => 'nullable',
+                'mitr_code' => 'nullable',
+                'latitude' => 'required|string',
+                'longitude' => 'required|string',
             ]);
             $existingLead = Lead::where('phone', $request->phone)->first();
             if ($existingLead) {
@@ -122,6 +128,11 @@ class LeadController extends Controller
                 'district' => $lead->district->name ?? null,
                 'assigned_route_id' => $lead->assigned_route_id,
                 'status' => 'Opened',
+                'ace_code' => $lead->ace_code,
+                'mitr_code' => $lead->mitr_code,
+                'latitude' => $lead->latitude,
+                'longitude' => $lead->longitude,
+                        
                 'created_at' => $lead->created_at->format('Y-m-d H:i:s'),
 
             ];
@@ -285,6 +296,10 @@ class LeadController extends Controller
                 'competitor_name' => $lead->competitor_name,
                 'reason_for_lost' => $lead->reason_for_lost,
                 'status' => $lead->status,
+                'ace_code' => $lead->ace_code,
+                'mitr_code' => $lead->mitr_code,
+                'latitude' => $lead->latitude,
+                'longitude' => $lead->longitude,
                 'dealer' => $lead->dealer ? [
                     'id' => $lead->dealer->id,
                     'name' => $lead->dealer->dealer_name,
@@ -418,6 +433,10 @@ class LeadController extends Controller
                     ] : null,
                     'route_name' => $lead->tripRoute->route_name ?? null,
                     'location' => $lead->location,
+                    'ace_code' => $lead->ace_code,
+                    'mitr_code' => $lead->mitr_code,
+                    'latitude' => $lead->latitude,
+                        'longitude' => $lead->longitude,
                     //  'created_at' => $lead->created_at->format('d/M/Y h:i A'),
                     'created_at' => ($lead->status === 'Follow Up' || $lead->status === 'Won' || $lead->status === 'Lost')
                         ? optional($lead->updated_at)->format('d/m/Y h:i A')
@@ -459,6 +478,8 @@ class LeadController extends Controller
                 'total_volume' => 'required|numeric',
                 'status' => 'required|in:Opened,Follow Up,Won,Lost',
                 'dealer_id' => 'nullable|numeric',
+                'ace_code' => 'nullable',
+                'mitr_code' => 'nullable',
 
                 'lost_details.lost_volume' => 'required_if:status,Lost|nullable|numeric',
                 'lost_details.lost_to_competitor' => 'required_if:status,Lost|nullable|string',
@@ -574,6 +595,8 @@ class LeadController extends Controller
                     'credit_days' => $orderDetails['credit_days'] ?? null,
                     'total_amount' => (float)$orderDetails['total_amount'],
                     'billing_date' => now()->format('Y-m-d'),
+                    'latitude' => $request->latitude,
+                    'longitude' => $request->longitude,
                     'status' => 'Pending',
                     'source' => 'lead_won',
                     'created_by' => Auth::id(),
@@ -667,6 +690,10 @@ class LeadController extends Controller
                         'lead_source'           => $request->lead_source,
                         'source_name'           => $request->source_name,
                         'follow_up_date'        => $f_date,
+                        'latitude' => $request->latitude,
+                        'longitude' => $request->longitude,
+                        'ace_code' => $request->ace_code,
+                'mitr_code' => $request->mitr_code,
                         // remaining volume
                         'total_volume'          => $balanceVolume,
                         'total_quantity'        => $balanceVolume,
@@ -689,6 +716,10 @@ class LeadController extends Controller
                         'location'          => $lead->location,
                         'district_id'       => $lead->district_id,
                         'assigned_route_id' => $lead->assigned_route_id,
+                        'latitude' => $request->latitude,
+                        'longitude' => $request->longitude,
+                        'ace_code' => $request->ace_code,
+                        'mitr_code' => $request->mitr_code,
                         'lead_chain_id'     => null, // new chain
                         'status'            => 'Opened',
                         'total_volume'      => 0,
@@ -775,6 +806,8 @@ class LeadController extends Controller
                         'attachments' => $lead->attachments,
                         'latitude' => $lead->latitude,
                         'longitude' => $lead->longitude,
+                        'ace_code' => $lead->ace_code,
+                        'mitr_code' => $lead->mitr_code,
                         'status' => $lead->status,
                         'created_by' => $lead->created_by,
                         'created_at' => $lead->created_at->format('d/M/Y h:i A'),
@@ -849,6 +882,10 @@ class LeadController extends Controller
                             'id' => $lead->district->id,
                             'name' => $lead->district->name,
                         ] : null,
+                        'latitude' => $lead->latitude,
+                        'longitude' => $lead->longitude,
+                        'ace_code' => $lead->ace_code,
+                        'mitr_code' => $lead->mitr_code,
                         'route_name' => $lead->tripRoute ? $lead->tripRoute->route_name : null,
                         'location' => $lead->tripRoute ? $lead->tripRoute->location_name : null,
                         'created_at' => $lead->created_at->format('d/M/Y h:i A'),
@@ -1863,6 +1900,10 @@ private function getInfluencerVisitListByStatus(array $statuses, $productId = nu
                     'phone' => $lead->phone,
                     'address' => $lead->address,
                     'status' => $status,
+                    'latitude' => $lead->latitude,
+                        'longitude' => $lead->longitude,
+                        'ace_code' => $lead->ace_code,
+                        'mitr_code' => $lead->mitr_code,
                     'location' => $lead->location,
                     'lead_source' => $lead->lead_source,
                     'lead_score' => $lead->lead_score,
@@ -1994,6 +2035,10 @@ private function getInfluencerVisitListByStatus(array $statuses, $productId = nu
                 'lead_score' => $lead->lead_score,
                 'location' => $lead->location,
                 'created_by' => $lead->created_by,
+                'latitude' => $lead->latitude,
+                'longitude' => $lead->longitude,
+                'ace_code' => $lead->ace_code,
+                'mitr_code' => $lead->mitr_code,
                 'created_at' => ($lead->status === 'Follow Up' || $lead->status === 'Won' || $lead->status === 'Lost')
                     ? optional($lead->updated_at)->format('d/m/Y h:i A')
                     : optional($lead->created_at)->format('d/m/Y h:i A')

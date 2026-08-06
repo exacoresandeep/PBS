@@ -45,6 +45,8 @@ class Lead extends Model
         'further_requirement',
         'further_volume',
         'created_by',
+        'ace_code',
+        'mitr_code',
         'lead_chain_id'
     ];
     protected $casts = [

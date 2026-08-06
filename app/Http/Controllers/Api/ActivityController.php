@@ -109,6 +109,8 @@ $filter = $request->filter;
                 'remarks' => 'required|string', 
                 'attachments' => 'required|array',
                 'attachments.*' => 'string',
+                // 'latitude'            => 'required',             
+                // 'longitude'           => 'required',
                 'question_inputs' => 'required|array',
                 'question_inputs.*.activity_question_labels_id' => 'required|integer',
                 'question_inputs.*.activity_input' => 'required|string|max:300',
@@ -637,6 +639,8 @@ $user = Auth::user();
             'assigned_date' => 'required|date',
             'due_date' => 'required|date|after_or_equal:assigned_date',
             'instruction' => 'required|string',
+            'latitude'            => 'required',             
+                'longitude'           => 'required',
     	]);
     	$emp=Employee::find($request->employee_id);
     	$deviceToken=$emp->fcm_token ?? null;
@@ -648,8 +652,10 @@ $user = Auth::user();
                 'assigned_date' => $request->assigned_date,
                 'due_date' => $request->due_date,
                 'instructions' => $request->instruction,
-		'created_by' => $user->id,
-	       	'status' => 'Pending',
+                'latitude'  => $request->latitude,       
+                'longitude' => $request->longitude,
+		        'created_by' => $user->id,
+	       	    'status' => 'Pending',
     	]);
     
     	if ($deviceToken) {
