@@ -47,7 +47,10 @@ class Lead extends Model
         'created_by',
         'ace_code',
         'mitr_code',
-        'lead_chain_id'
+        'lead_chain_id',
+        'latitude',
+        'longitude'
+
     ];
     protected $casts = [
         'lead_chain_id' => 'string',
