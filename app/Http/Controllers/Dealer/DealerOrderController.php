@@ -467,107 +467,7 @@ private function normalizeDate(?string $date): ?string
         }
     }
 
-    // public function show($orderId)
-    // {
-    //     try {
-    //         $user = Auth::user();
-    
-    //         if ($user === null) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'statusCode' => 400,
-    //                 'message' => 'You must be logged in to view this order.'
-    //             ], 400);
-    //         }
-    
-    //         $order = Order::with([
-    //             'orderType:id,name',
-    //             'dealers:id,dealer_name,dealer_code',
-    //             'orderItems.product:id,product_name',
-    //             'orderItems',
-    //             'paymentTerm:id,name',
-    //             'vehicleCategory:id,vehicle_category_name'
-    //         ])->findOrFail($orderId);
-    
-    //         $responseData = [
-    //             'id' => $order->id,
-    //             'order_type' => $order->orderType->name ?? null,
-    //             'dealer' => [
-    //                 'id' => $order->dealers->id ?? null,
-    //                 'name' => $order->dealers->dealer_name ?? null,
-    //                 'code' => $order->dealers->dealer_code ?? null,
-    //             ],
-    //             'payment_terms' => [
-    //                 'id' => $order->paymentTerm->id ?? null,
-    //                 'name' => $order->paymentTerm->name ?? null,
-    //             ],
-    //             'credit_days' => $order->credit_days,
-    //             'billing_date' => $order->billing_date,
-    //             'delivery_date' => $order->delivery_date,
-    //             'total_amount' => round($order->total_amount, 2),
-    //             'additional_information' => $order->additional_information,
-    //             'status' => $order->status,
-    //             'created_by_dealer' => $order->created_by_dealer,
-    //             'dealer_flag_order' => $order->dealer_flag_order,
-    //             'vehicle' => [
-    //                 'category_id' => $order->vehicle_category_id,
-    //                 'category_name' => $order->vehicleCategory->vehicle_category_name ?? null,
-    //                 'vehicle_number' => $order->vehicle_number,
-    //                 'driver_name' => $order->driver_name,
-    //                 'driver_phone' => $order->driver_phone,
-    //             ],
-    //             'track_order' =>[
-    //                 'accepted_time'   => $order->accepted_time,
-    //                 'rejected_time'   => $order->rejected_time,
-    //                 'dispatched_time' => $order->dispatched_time,
-    //                 'intransit_time'  => $order->intransit_time,
-    //                 'delivered_time'  => $order->delivered_time,
-    //             ],
-    //             'attachments' => $order->attachment ?? [],
-                
-    
-    //             'order_items' => $order->orderItems->map(function ($item) {
-
-    //                 return [
-    //                     'product_id' => $item->product_id,
-    //                     'product_name' => $item->product->product_name ?? 'N/A',
-    //                     'total_quantity' => $item->total_quantity,
-    //                     'balance_quantity' => $item->balance_quantity,
-    //                     'product_details' => collect($item->product_details)->map(function ($detail) {
-    //                         return [
-    //                             'product_type_id' => $detail['product_type_id'],
-    //                             'quantity' => $detail['quantity'],
-    //                             'rate' => $detail['rate'],
-    //                             'product_type' => ProductType::where('id', $detail['product_type_id'])->value('type_name') ?? 'N/A',
-    //                         ];
-    //                     }),
-    //                 ];
-    //             }),
-    
-    //             'created_at' => $order->created_at ? Carbon::parse($order->created_at)->format('d/m/Y') : null,
-               
-                
-	//     ];
-    //     if($order->dealer_flag_order!="1"){
-    //         //......................notification..............
-    //     $authController = new AuthController();
-    //     $authController->changeNotificationStatus('orders', $orderId,'opened');
-    //     }
-    //     return response()->json([
-    //             'success' => true,
-    //             'statusCode' => 200,
-    //             'message' => 'Order details fetched successfully',
-    //             'data' => $responseData,
-    //         ], 200);
-    
-    //     } catch (Exception $e) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'statusCode' => 500,
-    //             'message' => $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
+   
     public function show($orderId)
     {
         try {
@@ -587,6 +487,7 @@ private function normalizeDate(?string $date): ?string
                 'orderItems.product:id,product_name,product_code',
                 'paymentTerm:id,name',
                 'vehicleCategory:id,vehicle_category_name',
+                "lead"
             ])->findOrFail($orderId); 
 if($user->id==$order->dealer_id && $order->notification_status=="pending"){
                 $order->update(['notification_status' => 'opened']);      
@@ -639,6 +540,10 @@ if($user->id==$order->dealer_id && $order->notification_status=="pending"){
             $responseData = [
                 'id' => $order->id,
                 'order_type' => $order->orderType->name ?? null,
+                'latitude' => $order->latitude ?? null,
+                'longitude' => $order->longitude ?? null,
+                'ace_code'  => $order->lead ? $order->lead->ace_code : null,
+                'mitr_code' => $order->lead ? $order->lead->mitr_code : null,
 
                 'dealer' => [
                     'id' => $order->dealers->id ?? null,
