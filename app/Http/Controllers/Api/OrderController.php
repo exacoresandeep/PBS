@@ -266,7 +266,7 @@ class OrderController extends Controller
                 'orderType:id,name',
                 'dealer:id,dealer_name,dealer_code', 
                 'orderItems.product:id,product_name,product_code',
-                'lead:id,customer_type,customer_name,phone,address',
+                'lead:id,customer_type,customer_name,phone,address,ace_code,mitr_code',
                 'lead.customerType:id,name', 
                 'paymentTerm:id,name',
                 'vehicleCategory:id,vehicle_category_name' 

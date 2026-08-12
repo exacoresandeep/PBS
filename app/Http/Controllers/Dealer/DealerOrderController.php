@@ -540,11 +540,7 @@ if($user->id==$order->dealer_id && $order->notification_status=="pending"){
             $responseData = [
                 'id' => $order->id,
                 'order_type' => $order->orderType->name ?? null,
-                'latitude' => $order->latitude ?? null,
-                'longitude' => $order->longitude ?? null,
-                'ace_code'  => $order->lead ? $order->lead->ace_code : null,
-                'mitr_code' => $order->lead ? $order->lead->mitr_code : null,
-
+                
                 'dealer' => [
                     'id' => $order->dealers->id ?? null,
                     'name' => $order->dealers->dealer_name ?? null,
