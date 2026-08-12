@@ -144,6 +144,8 @@ class OrderController extends Controller
                 'order_items.*.total_quantity' => 'nullable',
                 'attachment' => 'nullable|array',
                 'attachment.*' => 'nullable|string',
+                'latitude' => 'required|string',
+                'longitude' => 'required|string',
                 
             ];
  
