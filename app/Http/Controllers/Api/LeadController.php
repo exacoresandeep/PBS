@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-
+use Yajra\DataTables\Facades\DataTables;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\LeadFollowUp;
 use App\Models\OrderItem;
 use App\Models\TripRoute;
+use App\Models\Employee;
 use App\Models\Dealer;
 use App\Models\ProductType;
 use App\Models\InfluencerVisit;
@@ -2338,6 +2339,337 @@ public function influencerSearch(Request $request)
             'message' => 'Influencer visit search results fetched successfully.',
             'data' => $visits,
         ], 200);
+    }
+    public function saleleads(){
+        $employees = Employee::all();
+
+        $customerTypes = \App\Models\CustomerType::orderBy('name')->get();
+
+        $districts = \App\Models\District::orderBy('name')->get();
+
+        return view('sales.leads.index', compact(
+            'employees',
+            'customerTypes',
+            'districts'
+        ));
+        
+    }
+    public function leadList(Request $request){
+        $query = Lead::with([
+        'customerType',
+        'district',
+        'tripRoute',
+        'createdBy','orders'
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Date
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('date')) {
+
+        $query->whereDate(
+            'created_at',
+            $request->date
+        );
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | District
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('district')) {
+
+        $query->where(
+            'district_id',
+            $request->district
+        );
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Customer Type
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('customer_type')) {
+
+        $query->where(
+            'customer_type',
+            $request->customer_type
+        );
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Employee
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('employee_id')) {
+
+        $query->where(
+            'created_by',
+            $request->employee_id
+        );
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Status
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('status')) {
+
+        $query->where(
+            'status',
+            $request->status
+        );
+
+    }
+
+
+    return DataTables::of($query)
+
+        ->addIndexColumn()
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Date and Time
+        |--------------------------------------------------------------------------
+        */
+
+        ->addColumn('date_time', function ($lead) {
+
+            /*
+             * Follow Up / Won / Lost should show updated date
+             * based on your existing API logic.
+             */
+
+            $date = $lead->created_at;
+            $date1 = in_array($lead->status, [
+                'Follow Up',
+                'Won',
+                'Lost'
+            ])
+                ? $lead->updated_at
+                : $lead->created_at;
+
+            return $date
+                ? $date->format('d/m/Y - h:i A')
+                : '-';
+
+        })
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Customer Type
+        |--------------------------------------------------------------------------
+        */
+
+        ->addColumn('customer_type_name', function ($lead) {
+
+            return $lead->customerType->name ?? '-';
+
+        })
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Customer Name
+        |--------------------------------------------------------------------------
+        */
+
+        ->addColumn('customer_name_display', function ($lead) {
+
+            return $lead->customer_name ?? '-';
+
+        })
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Location
+        |--------------------------------------------------------------------------
+        */
+
+        ->addColumn('location_display', function ($lead) {
+
+            return $lead->location ?? '-';
+
+        })
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | District
+        |--------------------------------------------------------------------------
+        */
+
+        ->addColumn('district_name', function ($lead) {
+
+            return $lead->district->name ?? '-';
+
+        })
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Status
+        |--------------------------------------------------------------------------
+        */
+
+        ->addColumn('status_display', function ($lead) {
+
+            $status = $lead->status;
+
+            $class = match ($status) {
+
+                'Follow Up' => 'follow-up',
+
+                'Won' => 'won',
+
+                'Lost' => 'lost',
+
+                'Opened' => 'open',
+
+                'Open' => 'open',
+
+                default => 'open',
+
+            };
+
+            return '<span class="lead-status ' . $class . '">'
+                    . e($status)
+                    . '</span>';
+
+        })
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Approval Status
+        |--------------------------------------------------------------------------
+        */
+
+        ->addColumn('approval_status', function ($lead) {
+
+            // If lead is not Won
+            if ($lead->status !== 'Won') {
+                return '<span class="approval-status na">NA</span>';
+            }
+
+            // Lead is Won, check order status
+            $order = $lead->orders->sortByDesc('created_at')->first();
+
+            // No order found
+            if (!$order) {
+                return '<span class="approval-status na">NA</span>';
+            }
+
+            $orderStatus = $order->status;
+
+            /*
+            |--------------------------------------------------------------------------
+            | Order Status Mapping
+            |--------------------------------------------------------------------------
+            */
+
+            if (in_array($orderStatus, [
+                'Pending',
+                'Accepted'
+            ])) {
+
+                return '<span class="approval-status pending">
+                            Pending
+                        </span>';
+            }
+
+            if (in_array($orderStatus, [
+                'Rejected',
+                'Accounts Rejected'
+            ])) {
+
+                return '<span class="approval-status rejected">
+                            Rejected
+                        </span>';
+            }
+
+            if (in_array($orderStatus, [
+                'Dispatched',
+                'In Transit',
+                'Delivered',
+                'Accounts Approved'
+            ])) {
+
+                return '<span class="approval-status approved">
+                            Approved
+                        </span>';
+            }
+
+            return '<span class="approval-status na">NA</span>';
+
+        })
+
+        /*
+        |--------------------------------------------------------------------------
+        | Action
+        |--------------------------------------------------------------------------
+        */
+
+        ->addColumn('action', function ($lead) {
+
+            return '
+                <a href="' . route('lead.view', $lead->id) . '"
+                   class="viewLead"
+                   title="View Lead">
+
+                    <i class="fa fa-eye"></i>
+
+                </a>
+            ';
+
+        })
+
+
+        ->rawColumns([
+            'status_display',
+            'approval_status',
+            'action'
+        ])
+
+        ->make(true);
+
+    }
+    public function viewLead(){
+         $lead = Lead::with([
+            'customerType',
+            'district',
+            'tripRoute',
+            'createdBy',
+            'followUps'
+        ])->findOrFail($id);
+
+        return view(
+            'sales.leads.view',
+            compact('lead')
+        );
+
     }
 }
 

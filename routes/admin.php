@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\DealerController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\AccountsController;
+use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Logistics\LogisticsController;
 use App\Http\Controllers\Logistics\TripController;
@@ -157,7 +158,7 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
         Route::get('/export/aashiyana-orders', [DashboardController::class, 'exportAashiyanaOrders'])->name('sales.aashiyana-orders');
         Route::get('/export/tiscon-orders', [DashboardController::class, 'exportTisconOrders'])->name('sales.tiscon-orders');
     });
-
+    
     Route::prefix('accounts')->middleware('auth')->group(function () {
         //Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('accounts.dashboard');
         Route::get('/dashboard', [DashboardController::class, 'accountsDashboard'])->name('accounts.dashboard');   
@@ -302,6 +303,17 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
             Route::get('/view/{id}', [OperationsController::class, 'viewOrder'])->name('view');
             Route::post('/change-status/{id}', [OperationsController::class, 'changeStatus'])->name('operations.orders.changeStatus');
             Route::get('/export', [OperationsController::class, 'export'])->name('operations.orders.export'); 
-	Route::get('/exportAllOrder', [OperationsController::class, 'exportAllOrder'])->name('operations.orders.exportAllOrder'); 
-	});
+	        Route::get('/exportAllOrder', [OperationsController::class, 'exportAllOrder'])->name('operations.orders.exportAllOrder'); 
+	    });
+    });
+    Route::prefix('leads')->middleware('auth')->group(function () {
+        Route::get('/', [LeadController::class, 'saleleads'])->name('leads.saleleads');
+        Route::get('/list', [LeadController::class, 'leadList'])->name('leads.list');
+        Route::get('/view/{id}', [LeadController::class, 'viewLead'])->name('lead.view');
+    });
+    Route::prefix('tracking')->middleware('auth')->group(function () {
+        Route::get('/', [RouteController::class, 'tracking'])->name('tracking.index');
+        Route::post('/trackingDetails', [RouteController::class, 'trackingDetails'])->name('tracking.trackingDetails');
+        Route::get('/overview', [RouteController::class, 'overview'])->name('tracking.overview');
+        Route::post('/overviewDetils', [RouteController::class, 'overviewDetils'])->name('tracking.overviewDetils');
     });

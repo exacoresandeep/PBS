@@ -143,6 +143,26 @@
                     Employee Management <span class="icon-right"></span>
                 </a>
             </li>
+            <li>
+                <a class="menu-title" href="{{ route('leads.saleleads') }}"><i class="fa fa-address-book" aria-hidden="true"></i>
+                    Lead Management<span class="icon-right"></span>
+                </a>
+            </li>
+            <li>
+                <a class="menu-title">
+                    <i class="fa fa-map-marker" aria-hidden="true"></i>
+                    Tracking<span class="icon-right"><i class="fa fa-solid fa-angle-down"></i></span>
+                </a>
+                <ul class="submenu">
+                    <li>
+                        <a href="{{ route('tracking.index') }}">Route Tracking<span class="icon-right"></span></a>
+                    </li>
+                    <li>
+                        <a href="{{ route('tracking.overview') }}">Route Overview<span class="icon-right"></span></a>
+                    </li>
+                </ul>
+            </li>
+            
         </ul>
         
      

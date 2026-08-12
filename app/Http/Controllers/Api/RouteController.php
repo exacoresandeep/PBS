@@ -1399,6 +1399,17 @@ if($trip->notification_status=='pending'){
             ->get();
     }
 
+    public function tracking(){
+    }
+    public function trackingDetails(){
+
+    }
+    public function overview(){
+
+    }
+    public function overviewDetils(){
+
+    }
 
 
 }
