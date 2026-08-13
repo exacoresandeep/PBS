@@ -17,6 +17,12 @@ class DealerVisit extends Model
         'new_order',
         'created_by',
         'created_at',
+        "rcb_poster_visible",
+        "dealer_signage",
+        "pop_poster_available",
+        "browser_available",
+        "target_scheme_discussion",
+        "no_ace_attached",
     ];
      protected $casts = [
         'attachments' => 'array', // store as JSON

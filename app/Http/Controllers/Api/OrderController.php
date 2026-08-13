@@ -3758,7 +3758,14 @@ public function orderApprovalSearch(Request $request)
                 'purpose_of_visit' => 'required|string',
                 'remarks' => 'nullable|string',
                 'attachments' => 'nullable|array',
-                'attachments.*' => 'nullable|string'
+                'attachments.*' => 'nullable|string',
+                "rcb_poster_visible" => 'required|in:Yes,No',
+                "dealer_signage" => 'required|in:Yes,No',
+                "pop_poster_available" => 'required|in:Yes,No',
+                "browser_available" => 'required|in:Yes,No',
+                "target_scheme_discussion" => 'required|in:Yes,No',
+                "new_order" => 'required|in:Yes,No',
+                "no_ace_attached" => 'required|in:Yes,No',
             ];
 
             $purpose = $request->input('purpose_of_visit');
