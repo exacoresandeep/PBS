@@ -2362,75 +2362,42 @@ public function influencerSearch(Request $request)
         'createdBy','orders'
     ]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Date
-    |--------------------------------------------------------------------------
-    */
+    if ($request->filled('from_date') && $request->filled('to_date')) {
 
-    if ($request->filled('date')) {
+        $query->whereBetween('created_at', [
+            $request->from_date . ' 00:00:00',
+            $request->to_date . ' 23:59:59'
+        ]);
 
-        $query->whereDate(
-            'created_at',
-            $request->date
-        );
+    } elseif ($request->filled('from_date')) {
+
+        $query->whereDate('created_at', '>=', $request->from_date);
+
+    } elseif ($request->filled('to_date')) {
+
+        $query->whereDate('created_at', '<=', $request->to_date);
 
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | District
-    |--------------------------------------------------------------------------
-    */
-
     if ($request->filled('district')) {
-
         $query->where(
             'district_id',
             $request->district
         );
-
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Customer Type
-    |--------------------------------------------------------------------------
-    */
-
     if ($request->filled('customer_type')) {
-
         $query->where(
             'customer_type',
             $request->customer_type
         );
-
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Employee
-    |--------------------------------------------------------------------------
-    */
-
     if ($request->filled('employee_id')) {
-
         $query->where(
             'created_by',
             $request->employee_id
         );
-
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Status
-    |--------------------------------------------------------------------------
-    */
 
     if ($request->filled('status')) {
 
@@ -2438,28 +2405,16 @@ public function influencerSearch(Request $request)
             'status',
             $request->status
         );
-
     }
-
 
     return DataTables::of($query)
 
         ->addIndexColumn()
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Date and Time
-        |--------------------------------------------------------------------------
-        */
-
         ->addColumn('date_time', function ($lead) {
 
-            /*
-             * Follow Up / Won / Lost should show updated date
-             * based on your existing API logic.
-             */
-
+           
             $date = $lead->created_at;
             $date1 = in_array($lead->status, [
                 'Follow Up',
@@ -2476,12 +2431,6 @@ public function influencerSearch(Request $request)
         })
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Customer Type
-        |--------------------------------------------------------------------------
-        */
-
         ->addColumn('customer_type_name', function ($lead) {
 
             return $lead->customerType->name ?? '-';
@@ -2489,24 +2438,11 @@ public function influencerSearch(Request $request)
         })
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Customer Name
-        |--------------------------------------------------------------------------
-        */
-
         ->addColumn('customer_name_display', function ($lead) {
 
             return $lead->customer_name ?? '-';
 
         })
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Location
-        |--------------------------------------------------------------------------
-        */
 
         ->addColumn('location_display', function ($lead) {
 
@@ -2514,25 +2450,11 @@ public function influencerSearch(Request $request)
 
         })
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | District
-        |--------------------------------------------------------------------------
-        */
-
         ->addColumn('district_name', function ($lead) {
 
             return $lead->district->name ?? '-';
 
         })
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Status
-        |--------------------------------------------------------------------------
-        */
 
         ->addColumn('status_display', function ($lead) {
 
@@ -2560,13 +2482,6 @@ public function influencerSearch(Request $request)
 
         })
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Approval Status
-        |--------------------------------------------------------------------------
-        */
-
         ->addColumn('approval_status', function ($lead) {
 
             // If lead is not Won
@@ -2583,12 +2498,6 @@ public function influencerSearch(Request $request)
             }
 
             $orderStatus = $order->status;
-
-            /*
-            |--------------------------------------------------------------------------
-            | Order Status Mapping
-            |--------------------------------------------------------------------------
-            */
 
             if (in_array($orderStatus, [
                 'Pending',
@@ -2625,23 +2534,17 @@ public function influencerSearch(Request $request)
             return '<span class="approval-status na">NA</span>';
 
         })
-
-        /*
-        |--------------------------------------------------------------------------
-        | Action
-        |--------------------------------------------------------------------------
-        */
-
         ->addColumn('action', function ($lead) {
 
             return '
-                <a href="' . route('lead.view', $lead->id) . '"
-                   class="viewLead"
-                   title="View Lead">
+                <button type="button"
+                        class="btn btn-sm btn-link p-0 viewLead"
+                        data-id="' . $lead->id . '"
+                        title="View Lead">
 
                     <i class="fa fa-eye"></i>
 
-                </a>
+                </button>
             ';
 
         })
@@ -2656,20 +2559,16 @@ public function influencerSearch(Request $request)
         ->make(true);
 
     }
-    public function viewLead(){
-         $lead = Lead::with([
+    public function viewLead($id)
+    {
+        $lead = Lead::with([
             'customerType',
             'district',
-            'tripRoute',
             'createdBy',
-            'followUps'
+            'followUps','assignRoute', 'orders.dealer','orders.paymentTerm','orders.customerType'
         ])->findOrFail($id);
 
-        return view(
-            'sales.leads.view',
-            compact('lead')
-        );
-
+        return response()->json($lead);
     }
 }
 

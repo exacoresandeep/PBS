@@ -590,13 +590,13 @@ private function sendAttendanceToGreytHR($employeeCode,$doorName, $direction)
         return view('sales.attendance.index', compact('attendance','employeeTypes'));
     }
 
-    public function list(Request $request)
+    public function listOld(Request $request)
     {
         //$query = Attendance::with(['employee.employeeType']);
- $user = Auth::user();
+        $user = Auth::user();
         $product_ids = is_array($user->product_ids)? $user->product_ids : json_decode($user->product_ids, true);
         
-       $query = Attendance::with(['employee.employeeType'])
+        $query = Attendance::with(['employee.employeeType'])
             ->whereHas('employee', function ($sub) use ($product_ids) {
                 $sub->where(function ($q) use ($product_ids) {
                     foreach ($product_ids as $pid) {
@@ -697,6 +697,362 @@ private function sendAttendanceToGreytHR($employeeCode,$doorName, $direction)
                 return '<a href="javascript:void(0);" data-type="Ending" class="view-images" data-images=\'' . json_encode($images) . '\'>View</a>';
             })
             ->rawColumns(['starting_attachment', 'ending_attachment'])
+            ->make(true);
+    }
+
+    public function list(Request $request)
+    {
+        $user = Auth::user();
+
+        $product_ids = is_array($user->product_ids)
+            ? $user->product_ids
+            : json_decode($user->product_ids, true);
+
+        $product_ids = $product_ids ?? [];
+
+        $query = Attendance::query()
+            ->select([
+                'id',
+                'employee_id',
+                'date',
+                'status',
+                'punch_in',
+                'punch_out',
+                'starting_remarks',
+                'starting_km',
+                'ending_remarks',
+                'ending_km',
+                'total_active_hours',
+                'leave_type',
+                'starting_attachment',
+                'ending_attachment',
+            ])
+            ->with([
+                'employee:id,name,employee_code,employee_type_id,products',
+                'employee.employeeType:id,type_name'
+            ])
+            ->whereHas('employee', function ($sub) use ($product_ids) {
+
+                if (!empty($product_ids)) {
+
+                    $sub->where(function ($q) use ($product_ids) {
+
+                        foreach ($product_ids as $pid) {
+
+                            $q->orWhereJsonContains(
+                                'products',
+                                (string) $pid
+                            );
+
+                        }
+
+                    });
+
+                }
+
+            });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Employee Type
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->filled('employee_type')) {
+
+            $query->whereHas('employee', function ($q) use ($request) {
+
+                $q->where(
+                    'employee_type_id',
+                    $request->employee_type
+                );
+
+            });
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Employee
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->filled('employee_id')) {
+
+            $query->where(
+                'employee_id',
+                $request->employee_id
+            );
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Date Filter
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->filled('from_date')) {
+
+            $query->whereDate(
+                'date',
+                '>=',
+                $request->from_date
+            );
+
+        }
+
+        if ($request->filled('to_date')) {
+
+            $query->whereDate(
+                'date',
+                '<=',
+                $request->to_date
+            );
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Status
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->filled('status')) {
+
+            $query->where(
+                'status',
+                strtolower($request->status)
+            );
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Order
+        |--------------------------------------------------------------------------
+        */
+
+        $query->orderByDesc('date')
+            ->orderByDesc('id');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DataTables
+        |--------------------------------------------------------------------------
+        */
+
+        return DataTables::eloquent($query)
+
+            ->filter(function ($query) use ($request) {
+
+                $searchValue = $request->input('search.value');
+
+                if (!empty($searchValue)) {
+
+                    $query->where(function ($q) use ($searchValue) {
+
+                        $q->whereHas('employee', function ($employee) use ($searchValue) {
+
+                            $employee->where('name', 'like', "%{$searchValue}%")
+                                ->orWhere(
+                                    'employee_code',
+                                    'like',
+                                    "%{$searchValue}%"
+                                );
+
+                        })
+                        ->orWhere(
+                            'date',
+                            'like',
+                            "%{$searchValue}%"
+                        )
+                        ->orWhere(
+                            'status',
+                            'like',
+                            "%{$searchValue}%"
+                        );
+
+                    });
+
+                }
+
+            })
+
+            ->addIndexColumn()
+
+            ->addColumn('attendance_day', function ($target) {
+
+                return $target->date
+                    ? \Carbon\Carbon::parse($target->date)->format('d-m-Y')
+                    : '-';
+
+            })
+
+            ->addColumn('employee_name', function ($target) {
+
+                return optional($target->employee)->name
+                    . ' / '
+                    . optional($target->employee)->employee_code;
+
+            })
+
+            ->addColumn('status', function ($target) {
+
+                return ucfirst($target->status ?? '-');
+
+            })
+
+            ->addColumn('punch_in', function ($t) {
+
+                return $t->punch_in ?? '-';
+
+            })
+
+            ->addColumn('starting_remarks', function ($t) {
+
+                return $t->status === 'leave'
+                    ? '-'
+                    : ($t->starting_remarks ?? '-');
+
+            })
+
+            ->addColumn('starting_km', function ($t) {
+
+                return $t->starting_km ?? '-';
+
+            })
+
+            ->addColumn('punch_out', function ($t) {
+
+                return $t->punch_out ?? '-';
+
+            })
+
+            ->addColumn('ending_remarks', function ($t) {
+
+                return $t->ending_remarks ?? '-';
+
+            })
+
+            ->addColumn('ending_km', function ($t) {
+
+                return $t->ending_km ?? '-';
+
+            })
+
+            ->addColumn('total_time', function ($t) {
+
+                return $t->total_active_hours ?? '-';
+
+            })
+
+            ->addColumn('leave_type', function ($t) {
+
+                return $t->leave_type ?? '-';
+
+            })
+
+            ->addColumn('leave_remarks', function ($t) {
+
+                if ($t->status === 'leave') {
+
+                    return $t->starting_remarks ?? '-';
+
+                }
+
+                return $t->leave_type
+                    ? $t->leave_type . ' - ' . ($t->starting_remarks ?? '')
+                    : '-';
+
+            })
+
+            ->addColumn('total_km', function ($t) {
+
+                if (
+                    $t->starting_km !== null &&
+                    $t->ending_km !== null
+                ) {
+
+                    return $t->ending_km - $t->starting_km;
+
+                }
+
+                return '-';
+
+            })
+
+            ->addColumn('starting_attachment', function ($t) {
+
+                if (empty($t->starting_attachment)) {
+                    return '-';
+                }
+
+                $images = json_decode(
+                    $t->starting_attachment,
+                    true
+                );
+
+                if (empty($images)) {
+                    return '-';
+                }
+
+                return '<a href="javascript:void(0);"
+                            data-type="Starting"
+                            class="view-images"
+                            data-images=\'' .
+                            htmlspecialchars(
+                                json_encode($images),
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) .
+                            '\'>
+                            View
+                        </a>';
+
+            })
+
+            ->addColumn('ending_attachment', function ($t) {
+
+                if (empty($t->ending_attachment)) {
+                    return '-';
+                }
+
+                $images = json_decode(
+                    $t->ending_attachment,
+                    true
+                );
+
+                if (empty($images)) {
+                    return '-';
+                }
+
+                return '<a href="javascript:void(0);"
+                            data-type="Ending"
+                            class="view-images"
+                            data-images=\'' .
+                            htmlspecialchars(
+                                json_encode($images),
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) .
+                            '\'>
+                            View
+                        </a>';
+
+            })
+
+            ->rawColumns([
+                'starting_attachment',
+                'ending_attachment'
+            ])
+
             ->make(true);
     }
 
