@@ -4,9 +4,24 @@
 
 <div class="activity-sec">
 
-    <div class="inner-header">
-        <h3>Lead Management</h3>
+    <div class="inner-header d-flex justify-content-between align-items-center">
+
+    <h3 class="mb-0">
+        Lead Management
+    </h3>
+
+    <div>
+        <button type="button"
+                id="exportLeads"
+                class="btn btn-success btn-sm">
+
+            <i class="fa fa-file-excel-o"></i>
+            Export Excel
+
+        </button>
     </div>
+
+</div>
 
 
     {{-- ================= FILTERS ================= --}}
@@ -380,7 +395,7 @@ $(document).on('click', '.viewLead', function (e) {
             `);
             let followUpInformation = '';
 
-            if (lead.status === 'Follow Up' || lead.status === 'Won') {
+            if (lead.status === 'Follow Up' || lead.status === 'Won' || lead.status === 'Lost') {
 
                 followUpInformation = `
                     <div class="card border-0">
@@ -586,7 +601,7 @@ $(document).on('click', '.viewLead', function (e) {
                                         </label>
 
                                         <div>
-                                            ${order?.dealer_code ?? '-'}
+                                            ${order?.dealer?.dealer_code ?? '-'}
                                         </div>
                                     </div>
 
@@ -596,7 +611,7 @@ $(document).on('click', '.viewLead', function (e) {
                                         </label>
 
                                         <div>
-                                            ${order?.buyer_type ?? '-'}
+                                            ${lead.customer_type.name ?? '-'}
                                         </div>
                                     </div>
 
@@ -613,7 +628,7 @@ $(document).on('click', '.viewLead', function (e) {
                                         </label>
 
                                         <div>
-                                            ${order?.dealer_name ?? '-'}
+                                            ${order?.dealer?.dealer_name ?? '-'}
                                         </div>
                                     </div>
 
@@ -623,7 +638,7 @@ $(document).on('click', '.viewLead', function (e) {
                                         </label>
 
                                         <div>
-                                            ${order?.payment_type ?? '-'}
+                                            ${order?.payment_term.name ?? '-'}
                                         </div>
                                     </div>
 
@@ -646,52 +661,49 @@ $(document).on('click', '.viewLead', function (e) {
 
                 let productRows = '';
 
-                if (lead.orders && lead.orders.length > 0) {
+                let orders = lead.orders || [];
 
-                    lead.orders.forEach(function(order) {
+                if (orders.length > 0 && orders[0].order_items) {
 
-                        productRows += `
+                    orders[0].order_items.forEach(function(orderItem) {
 
-                            <tr>
+                        let productDetails = orderItem.product_details || [];
 
-                                <td>
-                                    ${order.product_type ?? '-'}
-                                </td>
+                        productDetails.forEach(function(product) {
 
-                                <td>
-                                    ${order.quantity ?? '-'}
-                                </td>
+                            productRows += `
+                                <tr>
+                                    <td>
+                                        ${product.type_name ?? '-'}
+                                    </td>
 
-                                <td>
-                                    ${order.price
-                                        ? Number(order.price).toLocaleString('en-IN', {
-                                            minimumFractionDigits: 2,
-                                            maximumFractionDigits: 2
-                                        })
-                                        : '-'}
-                                </td>
+                                    <td>
+                                        ${product.quantity ?? '-'}
+                                    </td>
 
-                            </tr>
+                                    <td>
+                                        ${product.rate
+                                            ? Number(product.rate).toLocaleString('en-IN', {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2
+                                            })
+                                            : '-'}
+                                    </td>
+                                </tr>
+                            `;
 
-                        `;
+                        });
 
                     });
 
                 } else {
 
                     productRows = `
-
                         <tr>
-
-                            <td colspan="3"
-                                class="text-center text-muted">
-
+                            <td colspan="3" class="text-center text-muted">
                                 No product information available
-
                             </td>
-
                         </tr>
-
                     `;
 
                 }
@@ -706,20 +718,33 @@ $(document).on('click', '.viewLead', function (e) {
                 let totalQuantity = 0;
                 let totalAmount = 0;
 
-                if (lead.orders && lead.orders.length > 0) {
+                if (orders.length > 0 && orders[0].order_items) {
 
-                    lead.orders.forEach(function(order) {
+                    orders[0].order_items.forEach(function(orderItem) {
 
-                        totalQuantity += parseFloat(order.quantity) || 0;
+                        let productDetails = orderItem.product_details || [];
 
-                        totalAmount +=
-                            (parseFloat(order.quantity) || 0) *
-                            (parseFloat(order.price) || 0);
+                        productDetails.forEach(function(product) {
+
+                            let quantity = parseFloat(product.quantity) || 0;
+                            let rate = parseFloat(product.rate) || 0;
+
+                            totalQuantity += quantity;
+
+                            totalAmount += quantity * rate;
+
+                        });
 
                     });
 
                 }
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | Product Information HTML
+                |--------------------------------------------------------------------------
+                */
 
                 productInformation = `
 
@@ -777,7 +802,7 @@ $(document).on('click', '.viewLead', function (e) {
                                         </label>
 
                                         <strong>
-                                            ${totalQuantity}
+                                            ${totalQuantity.toFixed(2)}
                                         </strong>
 
                                     </div>
@@ -814,6 +839,52 @@ $(document).on('click', '.viewLead', function (e) {
             }
             $('#leadViewContent').append(orderInformation);
             $('#leadViewContent').append(productInformation);
+            if(lead.status === 'Lost'){
+                 $('#leadViewContent').append(`
+                <div class="card border-0">
+                    <div class="card-header bg-white border-bottom">
+                        <h6 class="mb-0">Lost Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Left Column -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="small text-muted d-block">
+                                        Lost Deal Volume
+                                    </label>
+                                    <div class="fw-normal">
+                                        ${lead.lost_volume ?? '-'}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="small text-muted d-block">
+                                        Reason for Lost
+                                    </label>
+                                    <div>
+                                        ${lead.reason_for_lost ?? '-'}
+                                    </div>
+                                </div>
+                                
+                            </div>
+                            <!-- Right Column -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="small text-muted d-block">
+                                        Lost to Compitator
+                                    </label>
+                                    <div>
+                                        ${lead.lost_to_competitor ?? '-'}
+                                    </div>
+                                </div>
+                               
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            }
         },
         error: function (xhr) {
 
@@ -1002,7 +1073,52 @@ $(document).ready(function () {
 
 
 });
+$('#exportLeads').on('click', function () {
 
+    let params = new URLSearchParams();
+
+    let fromDate = $('#lead_from_date').val();
+    let toDate = $('#lead_to_date').val();
+    let district = $('#lead_district').val();
+    let customerType = $('#customer_type').val();
+    let employee = $('#employee').val();
+    let status = $('#lead_status').val();
+
+
+    if (fromDate) {
+        params.append('from_date', fromDate);
+    }
+
+    if (toDate) {
+        params.append('to_date', toDate);
+    }
+
+    if (district) {
+        params.append('district', district);
+    }
+
+    if (customerType) {
+        params.append('customer_type', customerType);
+    }
+
+    if (employee) {
+        params.append('employee_id', employee);
+    }
+
+    if (status) {
+        params.append('status', status);
+    }
+
+
+    let exportUrl =
+        "{{ route('leads.export') }}" +
+        '?' +
+        params.toString();
+
+
+    window.location.href = exportUrl;
+
+}); 
 </script>
 
 @endsection

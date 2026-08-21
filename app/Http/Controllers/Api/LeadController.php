@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Services\FirebasePushService;
+use App\Exports\AllLeadExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LeadController extends Controller
 {
@@ -2355,208 +2357,208 @@ public function influencerSearch(Request $request)
         
     }
     public function leadList(Request $request){
-        $query = Lead::with([
-        'customerType',
-        'district',
-        'tripRoute',
-        'createdBy','orders'
-    ]);
-
-    if ($request->filled('from_date') && $request->filled('to_date')) {
-
-        $query->whereBetween('created_at', [
-            $request->from_date . ' 00:00:00',
-            $request->to_date . ' 23:59:59'
+            $query = Lead::with([
+            'customerType',
+            'district',
+            'tripRoute',
+            'createdBy','orders'
         ]);
 
-    } elseif ($request->filled('from_date')) {
+        if ($request->filled('from_date') && $request->filled('to_date')) {
 
-        $query->whereDate('created_at', '>=', $request->from_date);
+            $query->whereBetween('created_at', [
+                $request->from_date . ' 00:00:00',
+                $request->to_date . ' 23:59:59'
+            ]);
 
-    } elseif ($request->filled('to_date')) {
+        } elseif ($request->filled('from_date')) {
 
-        $query->whereDate('created_at', '<=', $request->to_date);
+            $query->whereDate('created_at', '>=', $request->from_date);
 
-    }
-    if ($request->filled('district')) {
-        $query->where(
-            'district_id',
-            $request->district
-        );
-    }
+        } elseif ($request->filled('to_date')) {
 
-    if ($request->filled('customer_type')) {
-        $query->where(
-            'customer_type',
-            $request->customer_type
-        );
-    }
+            $query->whereDate('created_at', '<=', $request->to_date);
 
-    if ($request->filled('employee_id')) {
-        $query->where(
-            'created_by',
-            $request->employee_id
-        );
-    }
+        }
+        if ($request->filled('district')) {
+            $query->where(
+                'district_id',
+                $request->district
+            );
+        }
 
-    if ($request->filled('status')) {
+        if ($request->filled('customer_type')) {
+            $query->where(
+                'customer_type',
+                $request->customer_type
+            );
+        }
 
-        $query->where(
-            'status',
-            $request->status
-        );
-    }
+        if ($request->filled('employee_id')) {
+            $query->where(
+                'created_by',
+                $request->employee_id
+            );
+        }
 
-    return DataTables::of($query)
+        if ($request->filled('status')) {
 
-        ->addIndexColumn()
+            $query->where(
+                'status',
+                $request->status
+            );
+        }
+
+        return DataTables::of($query)
+
+            ->addIndexColumn()
 
 
-        ->addColumn('date_time', function ($lead) {
+            ->addColumn('date_time', function ($lead) {
 
-           
-            $date = $lead->created_at;
-            $date1 = in_array($lead->status, [
-                'Follow Up',
-                'Won',
-                'Lost'
+            
+                $date = $lead->created_at;
+                $date1 = in_array($lead->status, [
+                    'Follow Up',
+                    'Won',
+                    'Lost'
+                ])
+                    ? $lead->updated_at
+                    : $lead->created_at;
+
+                return $date
+                    ? $date->format('d/m/Y - h:i A')
+                    : '-';
+
+            })
+
+
+            ->addColumn('customer_type_name', function ($lead) {
+
+                return $lead->customerType->name ?? '-';
+
+            })
+
+
+            ->addColumn('customer_name_display', function ($lead) {
+
+                return $lead->customer_name ?? '-';
+
+            })
+
+            ->addColumn('location_display', function ($lead) {
+
+                return $lead->location ?? '-';
+
+            })
+
+            ->addColumn('district_name', function ($lead) {
+
+                return $lead->district->name ?? '-';
+
+            })
+
+            ->addColumn('status_display', function ($lead) {
+
+                $status = $lead->status;
+
+                $class = match ($status) {
+
+                    'Follow Up' => 'follow-up',
+
+                    'Won' => 'won',
+
+                    'Lost' => 'lost',
+
+                    'Opened' => 'open',
+
+                    'Open' => 'open',
+
+                    default => 'open',
+
+                };
+
+                return '<span class="lead-status ' . $class . '">'
+                        . e($status)
+                        . '</span>';
+
+            })
+
+            ->addColumn('approval_status', function ($lead) {
+
+                // If lead is not Won
+                if ($lead->status !== 'Won') {
+                    return '<span class="approval-status na">NA</span>';
+                }
+
+                // Lead is Won, check order status
+                $order = $lead->orders->sortByDesc('created_at')->first();
+
+                // No order found
+                if (!$order) {
+                    return '<span class="approval-status na">NA</span>';
+                }
+
+                $orderStatus = $order->status;
+
+                if (in_array($orderStatus, [
+                    'Pending',
+                    'Accepted'
+                ])) {
+
+                    return '<span class="approval-status pending">
+                                Pending
+                            </span>';
+                }
+
+                if (in_array($orderStatus, [
+                    'Rejected',
+                    'Accounts Rejected'
+                ])) {
+
+                    return '<span class="approval-status rejected">
+                                Rejected
+                            </span>';
+                }
+
+                if (in_array($orderStatus, [
+                    'Dispatched',
+                    'In Transit',
+                    'Delivered',
+                    'Accounts Approved'
+                ])) {
+
+                    return '<span class="approval-status approved">
+                                Approved
+                            </span>';
+                }
+
+                return '<span class="approval-status na">NA</span>';
+
+            })
+            ->addColumn('action', function ($lead) {
+
+                return '
+                    <button type="button"
+                            class="btn btn-sm btn-link p-0 viewLead"
+                            data-id="' . $lead->id . '"
+                            title="View Lead">
+
+                        <i class="fa fa-eye"></i>
+
+                    </button>
+                ';
+
+            })
+
+
+            ->rawColumns([
+                'status_display',
+                'approval_status',
+                'action'
             ])
-                ? $lead->updated_at
-                : $lead->created_at;
 
-            return $date
-                ? $date->format('d/m/Y - h:i A')
-                : '-';
-
-        })
-
-
-        ->addColumn('customer_type_name', function ($lead) {
-
-            return $lead->customerType->name ?? '-';
-
-        })
-
-
-        ->addColumn('customer_name_display', function ($lead) {
-
-            return $lead->customer_name ?? '-';
-
-        })
-
-        ->addColumn('location_display', function ($lead) {
-
-            return $lead->location ?? '-';
-
-        })
-
-        ->addColumn('district_name', function ($lead) {
-
-            return $lead->district->name ?? '-';
-
-        })
-
-        ->addColumn('status_display', function ($lead) {
-
-            $status = $lead->status;
-
-            $class = match ($status) {
-
-                'Follow Up' => 'follow-up',
-
-                'Won' => 'won',
-
-                'Lost' => 'lost',
-
-                'Opened' => 'open',
-
-                'Open' => 'open',
-
-                default => 'open',
-
-            };
-
-            return '<span class="lead-status ' . $class . '">'
-                    . e($status)
-                    . '</span>';
-
-        })
-
-        ->addColumn('approval_status', function ($lead) {
-
-            // If lead is not Won
-            if ($lead->status !== 'Won') {
-                return '<span class="approval-status na">NA</span>';
-            }
-
-            // Lead is Won, check order status
-            $order = $lead->orders->sortByDesc('created_at')->first();
-
-            // No order found
-            if (!$order) {
-                return '<span class="approval-status na">NA</span>';
-            }
-
-            $orderStatus = $order->status;
-
-            if (in_array($orderStatus, [
-                'Pending',
-                'Accepted'
-            ])) {
-
-                return '<span class="approval-status pending">
-                            Pending
-                        </span>';
-            }
-
-            if (in_array($orderStatus, [
-                'Rejected',
-                'Accounts Rejected'
-            ])) {
-
-                return '<span class="approval-status rejected">
-                            Rejected
-                        </span>';
-            }
-
-            if (in_array($orderStatus, [
-                'Dispatched',
-                'In Transit',
-                'Delivered',
-                'Accounts Approved'
-            ])) {
-
-                return '<span class="approval-status approved">
-                            Approved
-                        </span>';
-            }
-
-            return '<span class="approval-status na">NA</span>';
-
-        })
-        ->addColumn('action', function ($lead) {
-
-            return '
-                <button type="button"
-                        class="btn btn-sm btn-link p-0 viewLead"
-                        data-id="' . $lead->id . '"
-                        title="View Lead">
-
-                    <i class="fa fa-eye"></i>
-
-                </button>
-            ';
-
-        })
-
-
-        ->rawColumns([
-            'status_display',
-            'approval_status',
-            'action'
-        ])
-
-        ->make(true);
+            ->make(true);
 
     }
     public function viewLead($id)
@@ -2565,10 +2567,17 @@ public function influencerSearch(Request $request)
             'customerType',
             'district',
             'createdBy',
-            'followUps','assignRoute', 'orders.dealer','orders.paymentTerm','orders.customerType'
+            'followUps','assignRoute', 'orders.dealer','orders.paymentTerm','orders.customerType','orders.orderItems'
         ])->findOrFail($id);
 
         return response()->json($lead);
+    }
+    public function exportLeads(Request $request)
+    {
+        return Excel::download(
+            new AllLeadExport($request),
+            'AllLeadExport.xlsx'
+        );
     }
 }
 

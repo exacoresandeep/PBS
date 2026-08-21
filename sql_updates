@@ -22,6 +22,19 @@
             ALTER TABLE dealer_visits
             ADD COLUMN latitude DECIMAL(10,8) NULL AFTER `new_order`,
             ADD COLUMN longitude DECIMAL(11,8) NULL AFTER latitude;
+
+ALTER TABLE dealer_visits
+ADD COLUMN rcb_poster_visible ENUM('Yes','No') NOT NULL,
+ADD COLUMN dealer_signage ENUM('Yes','No') NOT NULL,
+ADD COLUMN pop_poster_available ENUM('Yes','No') NOT NULL,
+ADD COLUMN browser_available ENUM('Yes','No') NOT NULL,
+ADD COLUMN target_scheme_discussion ENUM('Yes','No') NOT NULL,
+ADD COLUMN new_order ENUM('Yes','No') NOT NULL,
+ADD COLUMN no_ace_attached ENUM('Yes','No') NOT NULL;
+
+ALTER TABLE dealer_visits
+MODIFY COLUMN no_ace_attached VARCHAR(256) NOT NULL;
+
         Removals (-)
 4.  orders
         Adds (+)            

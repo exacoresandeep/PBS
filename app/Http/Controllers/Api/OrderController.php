@@ -3765,7 +3765,7 @@ public function orderApprovalSearch(Request $request)
                 "browser_available" => 'required|in:Yes,No',
                 "target_scheme_discussion" => 'required|in:Yes,No',
                 "new_order" => 'required|in:Yes,No',
-                "no_ace_attached" => 'required|in:Yes,No',
+                "no_ace_attached" => 'required',
             ];
 
             $purpose = $request->input('purpose_of_visit');

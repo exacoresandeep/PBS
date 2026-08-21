@@ -310,6 +310,7 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
         Route::get('/', [LeadController::class, 'saleleads'])->name('leads.saleleads');
         Route::get('/list', [LeadController::class, 'leadList'])->name('leads.list');
         Route::get('/view/{id}', [LeadController::class, 'viewLead'])->name('lead.view');
+        Route::get('/export',[LeadController::class, 'exportLeads'])->name('leads.export');
     });
     Route::prefix('tracking')->middleware('auth')->group(function () {
         Route::get('/', [RouteController::class, 'tracking'])->name('tracking.index');
