@@ -3813,8 +3813,14 @@ public function orderApprovalSearch(Request $request)
                 ? $uploadedAttachments
                 : ($validatedData['attachments'] ?? []),
                 'stock_details' => $validatedData['stocks'] ?? null,
+                'rcb_poster_visible' => $validatedData['rcb_poster_visible'] ?? null,
+                'dealer_signage' => $validatedData['dealer_signage'] ?? null,
+                'pop_poster_available' => $validatedData['pop_poster_available'] ?? null,
+                'browser_available' => $validatedData['browser_available'] ?? null,
+                'target_scheme_discussion' => $validatedData['target_scheme_discussion'] ?? null,
                 'new_order' => $validatedData['new_order'] ?? null,
                 'created_by' => $employee->id,
+                'no_ace_attached' =>  $validatedData['no_ace_attached'] ?? null,
             ]);
 
             $order = null;
