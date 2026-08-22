@@ -64,6 +64,7 @@ Route::middleware('auth:sanctum')
                     Route::post('/', [DealerOrderController::class, 'store']); // Store  order
                     Route::get('/', [DealerOrderController::class, 'index']); // List orders by current user ID
                     Route::get('/{orderId}', [DealerOrderController::class, 'show']); // order details
+                    Route::get('delete/{orderId}', [DealerOrderController::class, 'deleteOrder']); 
                     // Route::post('/filter', [DealerOrderController::class, 'orderFilter']);
                     Route::post('/track-order', [DealerOrderController::class, 'trackOrder']);
                     Route::post('/monthly-transaction', [DealerOrderController::class, 'monthlySalesTransaction']);

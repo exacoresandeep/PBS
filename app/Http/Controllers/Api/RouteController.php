@@ -675,6 +675,13 @@ class RouteController extends Controller
 
         $formattedRoutes = $routes->map(function ($route) {
             $customers = json_decode($route->customers, true) ?? [];
+            $customers = collect($customers)
+            ->reject(function ($customer) {
+                return isset($customer['customer_type'])
+                    && $customer['customer_type'] === 'IHB';
+            })
+            ->values()
+            ->toArray();
 
             $status = collect($customers)->contains(function ($customer) {
                 return isset($customer['scheduled'])

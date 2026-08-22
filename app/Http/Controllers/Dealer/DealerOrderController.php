@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dealer;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Dealer;
 use App\Models\Employee;
 use App\Models\Payment;
@@ -380,7 +381,7 @@ private function normalizeDate(?string $date): ?string
 	    //
 	    $validatedData['billing_date'] = $this->normalizeDate($validatedData['billing_date']);
         $validatedData['delivery_date'] = $this->normalizeDate($validatedData['delivery_date'] ?? null);
-//dd($validatedData);
+            //dd($validatedData);
             $validatedData['created_by'] = null;
             $validatedData['created_by_dealer'] = $dealer->id;
             $validatedData['dealer_flag_order'] = '1';
@@ -467,7 +468,67 @@ private function normalizeDate(?string $date): ?string
         }
     }
 
-   
+    public function deleteOrder($orderId)
+    {
+        try {
+            $user = Auth::user();
+
+            if ($user === null) {
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 401,
+                    'message' => 'You must be logged in to delete this order.'
+                ], 401);
+            }
+
+            $order = Order::find($orderId);
+
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 404,
+                    'message' => 'Order not found.'
+                ], 404);
+            }
+
+            // Check whether the logged-in user created the order
+            if ($order->created_by != $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 403,
+                    'message' => 'You are not allowed to delete this order.'
+                ], 403);
+            }
+
+            // Only Pending orders can be deleted
+            if ($order->status !== 'Pending') {
+                return response()->json([
+                    'success' => false,
+                    'statusCode' => 403,
+                    'message' => 'Approver changed the status. You can\'t remove the order.'
+                ], 403);
+            }
+
+            // Delete related order items
+            OrderItem::where('order_id', $orderId)->delete();
+
+            // Delete order
+            $order->delete();
+
+            return response()->json([
+                'success' => true,
+                'statusCode' => 200,
+                'message' => 'Order deleted successfully.'
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'statusCode' => 500,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
     public function show($orderId)
     {
         try {
@@ -489,7 +550,7 @@ private function normalizeDate(?string $date): ?string
                 'vehicleCategory:id,vehicle_category_name',
                 "lead"
             ])->findOrFail($orderId); 
-if($user->id==$order->dealer_id && $order->notification_status=="pending"){
+            if($user->id==$order->dealer_id && $order->notification_status=="pending"){
                 $order->update(['notification_status' => 'opened']);      
             }
             // --- Process Order Items ---
