@@ -4042,6 +4042,12 @@ public function orderApprovalSearch(Request $request)
 
             case 'Casual Visit':
                 $data['new_order'] = $dealerVisit->new_order;
+                $data['rcb_poster_visible'] = $dealerVisit->rcb_poster_visible;
+                $data['dealer_signage'] = $dealerVisit->dealer_signage;
+                $data['new_order'] = $dealerVisit->new_order;
+                $data['browser_available'] = $dealerVisit->browser_available;
+                $data['target_scheme_discussion'] = $dealerVisit->target_scheme_discussion;
+                
                 if ($dealerVisit->new_order === 'Yes' && $dealerVisit->order) {
                     $data['order'] = $this->formatOrderDetails($dealerVisit->order);
                     $data['attachments'] = $dealerVisit->attachments ?? [];
