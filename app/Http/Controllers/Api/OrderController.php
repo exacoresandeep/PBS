@@ -4042,9 +4042,10 @@ public function orderApprovalSearch(Request $request)
 
             case 'Casual Visit':
                 $data['new_order'] = $dealerVisit->new_order;
+                $data['no_ace_attached'] = $dealerVisit->no_ace_attached;
                 $data['rcb_poster_visible'] = $dealerVisit->rcb_poster_visible;
                 $data['dealer_signage'] = $dealerVisit->dealer_signage;
-                $data['new_order'] = $dealerVisit->new_order;
+                $data['remarks'] = $dealerVisit->remarks;
                 $data['browser_available'] = $dealerVisit->browser_available;
                 $data['target_scheme_discussion'] = $dealerVisit->target_scheme_discussion;
                 $data['pop_poster_available'] = $dealerVisit->pop_poster_available;
