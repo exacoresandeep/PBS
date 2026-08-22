@@ -657,22 +657,30 @@ class RouteController extends Controller
     public function getRoutesReport(Request $request)
     {
         $employeeId = $request->input('employee_id');
-        $month = $request->input('month', Carbon::now()->month);
-        $year = $request->input('year', Carbon::now()->year);
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
 
-        $routes = RescheduledRoute::whereMonth('assign_date', $month)
-            ->whereYear('assign_date', $year)
+        $routes = RescheduledRoute::query()
+            ->when($fromDate, function ($query) use ($fromDate) {
+                $query->whereDate('assign_date', '>=', $fromDate);
+            })
+            ->when($toDate, function ($query) use ($toDate) {
+                $query->whereDate('assign_date', '<=', $toDate);
+            })
             ->when($employeeId, function ($query) use ($employeeId) {
                 $query->where('employee_id', $employeeId);
             })
+            ->orderBy('assign_date', 'asc')
             ->get();
 
         $formattedRoutes = $routes->map(function ($route) {
             $customers = json_decode($route->customers, true) ?? [];
 
             $status = collect($customers)->contains(function ($customer) {
-                return isset($customer['scheduled']) && $customer['scheduled'] === true &&
-                    isset($customer['status']) && $customer['status'] === 'Pending';
+                return isset($customer['scheduled'])
+                    && $customer['scheduled'] === true
+                    && isset($customer['status'])
+                    && $customer['status'] === 'Pending';
             }) ? 'Pending' : 'Completed';
 
             return [
