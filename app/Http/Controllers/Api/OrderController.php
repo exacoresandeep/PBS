@@ -4047,6 +4047,7 @@ public function orderApprovalSearch(Request $request)
                 $data['new_order'] = $dealerVisit->new_order;
                 $data['browser_available'] = $dealerVisit->browser_available;
                 $data['target_scheme_discussion'] = $dealerVisit->target_scheme_discussion;
+                $data['pop_poster_available'] = $dealerVisit->pop_poster_available;
                 
                 if ($dealerVisit->new_order === 'Yes' && $dealerVisit->order) {
                     $data['order'] = $this->formatOrderDetails($dealerVisit->order);
