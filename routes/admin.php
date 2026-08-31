@@ -314,6 +314,7 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
     });
     Route::prefix('tracking')->middleware('auth')->group(function () {
         Route::get('/', [RouteController::class, 'tracking'])->name('tracking.index');
+        Route::get('/route-tracking-data', [RouteController::class, 'trackingData'])->name('route-tracking-data');
         Route::post('/trackingDetails', [RouteController::class, 'trackingDetails'])->name('tracking.trackingDetails');
         Route::get('/overview', [RouteController::class, 'overview'])->name('tracking.overview');
         Route::post('/overviewDetils', [RouteController::class, 'overviewDetils'])->name('tracking.overviewDetils');

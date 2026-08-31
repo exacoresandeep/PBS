@@ -78,8 +78,8 @@ class ExpenseController extends Controller
             // 'km_traveled'   => 'nullable|integer|min:0',
             'other_expense' => 'nullable|numeric',
             'remarks'       => 'nullable|string|max:1000',
-	    'route'       => 'nullable|string|max:255',
-	    'attachment'    => 'nullable|array',
+            'route'       => 'nullable|string|max:255',
+            'attachment'    => 'nullable|array',
             'attachment.*'  => 'nullable|string|max:256',
         ]);
 
@@ -116,8 +116,8 @@ class ExpenseController extends Controller
             'km_traveled'   => $request->km_traveled,
             'other_expense' => $request->other_expense,
             'remarks'       => $request->remarks,
-	    'route'         => $request->route,
-	    'attachment'    => json_encode($attachments),
+            'route'         => $request->route,
+            'attachment'    => json_encode($attachments),
             'total_amount'  => $totalAmount,
         ]);
 
@@ -209,10 +209,10 @@ class ExpenseController extends Controller
 
     public function list(Request $request)
     {
-//        $query = DayExpense::with(['employee.employeeType']);
-$user = Auth::user();
-$productId = ProductHelper::getSelectedProductId(); 
-$product_ids = is_array($user->product_ids)? $user->product_ids : json_decode($user->product_ids, true);
+        //        $query = DayExpense::with(['employee.employeeType']);
+        $user = Auth::user();
+        $productId = ProductHelper::getSelectedProductId(); 
+        $product_ids = is_array($user->product_ids)? $user->product_ids : json_decode($user->product_ids, true);
         
        $query = DayExpense::with(['employee.employeeType'])
             ->whereHas('employee', function ($q) use ($productId) {

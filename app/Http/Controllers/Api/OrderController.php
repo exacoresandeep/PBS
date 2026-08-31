@@ -3759,13 +3759,14 @@ public function orderApprovalSearch(Request $request)
                 'remarks' => 'nullable|string',
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|string',
-                "rcb_poster_visible" => 'required|in:Yes,No',
-                "dealer_signage" => 'required|in:Yes,No',
-                "pop_poster_available" => 'required|in:Yes,No',
-                "browser_available" => 'required|in:Yes,No',
-                "target_scheme_discussion" => 'required|in:Yes,No',
-                "new_order" => 'required|in:Yes,No',
-                "no_ace_attached" => 'required',
+                //"new_order" => 'required|in:Yes,No',
+
+                // "rcb_poster_visible" => 'required|in:Yes,No',
+                // "dealer_signage" => 'required|in:Yes,No',
+                // "pop_poster_available" => 'required|in:Yes,No',
+                // "browser_available" => 'required|in:Yes,No',
+                // "target_scheme_discussion" => 'required|in:Yes,No',
+                // "no_ace_attached" => 'required',
             ];
 
             $purpose = $request->input('purpose_of_visit');
@@ -3782,7 +3783,12 @@ public function orderApprovalSearch(Request $request)
             }
 
             if ($purpose === 'Casual Visit') {
-                $rules['new_order'] = 'required|in:Yes,No';
+                $rules['new_order'] = 'required|in:Yes,No'; /* |-------------------------------------------------------------------------- | Casual Visit Specific Fields |-------------------------------------------------------------------------- */ $rules['rcb_poster_visible'] = 'required|in:Yes,No';
+                $rules['dealer_signage'] = 'required|in:Yes,No';
+                $rules['pop_poster_available'] = 'required|in:Yes,No';
+                $rules['browser_available'] = 'required|in:Yes,No';
+                $rules['target_scheme_discussion'] = 'required|in:Yes,No';
+                $rules['no_ace_attached'] = 'required';
                 if ($request->input('new_order') === 'Yes') {
                     $rules = array_merge($rules, $this->getOrderValidationRules($employee));
                 }

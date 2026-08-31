@@ -9,9 +9,13 @@ use App\Models\TripRoute;
 use App\Models\District;
 use App\Models\EmployeeType;
 use App\Models\Employee;
+use App\Models\Activity;
 use App\Models\DealerTripActivity;
 use App\Models\RescheduledRoute;
 use App\Models\Lead;
+use App\Models\InfluencerVisit;
+use App\Models\DealerVisit;
+use App\Models\Order;
 use App\Models\DealerRouteAssignment;
 use Carbon\Carbon;
 use App\Helpers\ProductHelper;
@@ -25,7 +29,6 @@ use App\Http\Controllers\Api\AuthController;
 
 class RouteController extends Controller
 {
-
     public function getTodaysTrip(Request $request)
     {
         try {
@@ -199,7 +202,6 @@ class RouteController extends Controller
         }
     }
 
-    
     public function todaysRouteSchedule()
     {
         try {
@@ -307,7 +309,6 @@ class RouteController extends Controller
             ], 500);
         }
     }
-
 
     public function currentWeekRoutes()
     {
@@ -444,8 +445,7 @@ class RouteController extends Controller
             ], 500);
         }
     }
-
-    
+  
     public function routeReschedule(Request $request)
     {
         if (!is_array($request->input('routes'))) {
@@ -540,8 +540,6 @@ class RouteController extends Controller
             'message' => 'Routes rescheduled successfully.',
         ], 200);
     }
-    
-
    
     public function changeRouteStatus(Request $request)
     {
@@ -601,9 +599,7 @@ class RouteController extends Controller
         $routes = TripRoute::where('district_id', $district_id)->get();
         return response()->json($routes);
     }
- 
-    
-
+   
     public function getRoutesByDistrict($district_id = null)
     {
         try {
@@ -652,7 +648,6 @@ class RouteController extends Controller
             ], 500);
         }
     }
-
 
     public function getRoutesReport(Request $request)
     {
@@ -706,69 +701,68 @@ class RouteController extends Controller
             'data' => $formattedRoutes,
         ], 200);
     }
-  public function getRouteDetails(Request $request, $routeId)
-{
-    try {
-        $productId = $request->input('product_id');
-
-        $route = RescheduledRoute::with('employee')
-            ->findOrFail($routeId);
-
-        // 🔐 Optional product validation
-        if ($productId) {
-            $handlesProduct = Employee::where('id', $route->employee_id)
-                ->whereRaw('FIND_IN_SET(?, products)', [$productId])
-                ->exists();
-
-            if (!$handlesProduct) {
-                return response()->json([
-                    'success' => false,
-                    'statusCode' => 403,
-                    'message' => 'This route does not belong to the selected product.',
-                ], 403);
-            }
-        }
-
-        $customers = json_decode($route->customers, true) ?? [];
-
-        $routeSummary = collect($customers)->map(function ($customer) {
-            return [
-                'customer_name' => $customer['customer_name'] ?? null,
-                'location' => $customer['location'] ?? null,
-                'customer_type' => $customer['customer_type'] ?? null,
-                'status' => $customer['status'] ?? null,
-                'completed_at' =>
-                    ($customer['status'] === 'Completed' && isset($customer['visited_at']))
-                        ? Carbon::parse($customer['visited_at'])->format('d/m/Y H:i:s')
-                        : null,
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'statusCode' => 200,
-            'data' => [
-                'route_name' => $route->route_name,
-                'employee_name' => $route->employee?->name ?? 'N/A',
-                'day' => $route->day,
-                'assign_date' => Carbon::parse($route->assign_date)->format('d/m/Y'),
-                'month' => Carbon::parse($route->assign_date)->format('F'),
-                'year' => Carbon::parse($route->assign_date)->format('Y'),
-                'route_summary' => $routeSummary,
-            ],
-        ], 200);
-
-    } catch (Exception $e) {
-        return response()->json([
-            'success' => false,
-            'statusCode' => 500,
-            'message' => $e->getMessage(),
-        ], 500);
-    }
-}
-
     
+    public function getRouteDetails(Request $request, $routeId)
+    {
+        try {
+            $productId = $request->input('product_id');
 
+            $route = RescheduledRoute::with('employee')
+                ->findOrFail($routeId);
+
+            // 🔐 Optional product validation
+            if ($productId) {
+                $handlesProduct = Employee::where('id', $route->employee_id)
+                    ->whereRaw('FIND_IN_SET(?, products)', [$productId])
+                    ->exists();
+
+                if (!$handlesProduct) {
+                    return response()->json([
+                        'success' => false,
+                        'statusCode' => 403,
+                        'message' => 'This route does not belong to the selected product.',
+                    ], 403);
+                }
+            }
+
+            $customers = json_decode($route->customers, true) ?? [];
+
+            $routeSummary = collect($customers)->map(function ($customer) {
+                return [
+                    'customer_name' => $customer['customer_name'] ?? null,
+                    'location' => $customer['location'] ?? null,
+                    'customer_type' => $customer['customer_type'] ?? null,
+                    'status' => $customer['status'] ?? null,
+                    'completed_at' =>
+                        ($customer['status'] === 'Completed' && isset($customer['visited_at']))
+                            ? Carbon::parse($customer['visited_at'])->format('d/m/Y H:i:s')
+                            : null,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'statusCode' => 200,
+                'data' => [
+                    'route_name' => $route->route_name,
+                    'employee_name' => $route->employee?->name ?? 'N/A',
+                    'day' => $route->day,
+                    'assign_date' => Carbon::parse($route->assign_date)->format('d/m/Y'),
+                    'month' => Carbon::parse($route->assign_date)->format('F'),
+                    'year' => Carbon::parse($route->assign_date)->format('Y'),
+                    'route_summary' => $routeSummary,
+                ],
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'statusCode' => 500,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+  
     public function routeIndex()
     {
         $districts = District::all(); 
@@ -878,8 +872,8 @@ class RouteController extends Controller
         return view('sales.route.index',compact('productId'));
     }
 
-     public function assignedList()
-     {
+    public function assignedList()
+    {
 	     $productId = ProductHelper::getSelectedProductId();
         $routes = AssignRoute::with(['employee', 'dealers'])
                       ->whereHas('employee', function($q) use ($productId) {
@@ -915,7 +909,6 @@ class RouteController extends Controller
             ->rawColumns(['route_name', 'action']) 
             ->make(true);
     }
-
 
     private function getEmployeeType($employee_type_id)
     {
@@ -1066,7 +1059,6 @@ class RouteController extends Controller
 
         return response()->json(['message' => 'Assigned routes updated successfully!']);
     }
-
    
     public function deleteAssignedRoute($id)
     {
@@ -1137,9 +1129,262 @@ class RouteController extends Controller
         $employees = Employee::select("employee_code","name","employee_type_id","district_id")->orderBy("name","asc")->get(); 
         return view('sales.tracking.index', compact('districts','designations','employees'));
     }
-    public function trackingDetails(){
 
+
+    public function trackingData(Request $request)
+    {
+        $request->validate([
+            'district_id'    => 'nullable',
+            'designation_id' => 'nullable',
+            'employee_id'    => 'nullable',
+            'date'           => 'required|date',
+        ]);
+
+
+        $date = $request->date;
+
+        $districtId = $request->district_id;
+        $designationId = $request->designation_id;
+        $employeeId = $request->employee_id;
+
+        $startDate = Carbon::parse($date)->startOfDay();
+        $endDate   = Carbon::parse($date)->endOfDay();
+
+        $routes = [];
+        /*
+        |--------------------------------------------------------------------------
+        | 1. LEADS
+        */
+
+        $leads = Lead::query()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->when($employeeId, function ($query) use ($employeeId) {
+                $query->where('employee_id', $employeeId);
+            })
+            ->when($districtId, function ($query) use ($districtId) {
+                $query->where('district_id', $districtId);
+            })
+            ->get();
+
+        foreach ($leads as $lead) {
+
+            if (
+                !empty($lead->latitude) &&
+                !empty($lead->longitude)
+            ) {
+
+                $routes[] = [
+                    'lat'         => $lead->latitude,
+                    'lng'         => $lead->longitude,
+                    'type'        => 'lead',
+                    'title'       => 'Lead',
+                    'description' => $lead->customer_name ?? 'Lead',
+                    'time'        => $lead->created_at,
+                ];
+            }
+        }
+       
+        /*
+        |--------------------------------------------------------------------------
+        | 2. INFLUENCER VISITS
+        |--------------------------------------------------------------------------
+        */
+        $influencerVisits = InfluencerVisit::query()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->when($employeeId, function ($query) use ($employeeId) {
+                $query->where('employee_id', $employeeId);
+            })
+            ->get();
+
+        foreach ($influencerVisits as $visit) {
+
+            if (
+                !empty($visit->latitude) &&
+                !empty($visit->longitude)
+            ) {
+
+                $routes[] = [
+                    'lat'         => $visit->latitude,
+                    'lng'         => $visit->longitude,
+                    'type'        => 'influencer',
+                    'title'       => 'Influencer Visit',
+                    'description' => $visit->influencer_name ?? 'Influencer Visit',
+                    'time'        => $visit->created_at,
+                ];
+            }
+        }
+        /*
+        |--------------------------------------------------------------------------
+        | 3. DEALER VISITS
+        |--------------------------------------------------------------------------
+        */
+        $dealerVisits = DealerVisit::with("dealer")->query()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->when($employeeId, function ($query) use ($employeeId) {
+                $query->where('employee_id', $employeeId);
+            })
+            ->get();
+
+        foreach ($dealerVisits as $visit) {
+
+            if (
+                !empty($visit->latitude) &&
+                !empty($visit->longitude)
+            ) {
+
+                $routes[] = [
+                    'lat'         => $visit->latitude,
+                    'lng'         => $visit->longitude,
+                    'type'        => 'dealer',
+                    'title'       => 'Dealer Visit',
+                    'description' => $visit->dealer->dealer_name ?? 'Dealer Visit',
+                    'time'        => $visit->created_at,
+                ];
+            }
+        }
+        /*
+        |--------------------------------------------------------------------------
+        | 4. ORDERS
+        |--------------------------------------------------------------------------
+        */
+        $orders = Order::with("dealer")->query()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->when($employeeId, function ($query) use ($employeeId) {
+                $query->where('employee_id', $employeeId);
+            })
+            ->get();
+
+        foreach ($orders as $order) {
+
+            if (
+                !empty($order->latitude) &&
+                !empty($order->longitude)
+            ) {
+
+                $routes[] = [
+                    'lat'         => $order->latitude,
+                    'lng'         => $order->longitude,
+                    'type'        => 'order',
+                    'title'       => 'Order',
+                    'description' => $order->dealer->dealer_name ?? 'Order',
+                    'time'        => $order->created_at,
+                ];
+            }
+        }
+        /*
+        |--------------------------------------------------------------------------
+        | 5. ACTIVITIES
+        |--------------------------------------------------------------------------
+        */
+        $activities = Activity::with("activityType")->query()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->when($employeeId, function ($query) use ($employeeId) {
+                $query->where('employee_id', $employeeId);
+            })
+            ->get();
+
+        foreach ($activities as $activity) {
+
+            if (
+                !empty($activity->latitude) &&
+                !empty($activity->longitude)
+            ) {
+
+                $routes[] = [
+                    'lat'         => $activity->latitude,
+                    'lng'         => $activity->longitude,
+                    'type'        => 'activity',
+                    'title'       => 'Activity',
+                    'description' => $activity->activityType->name ?? 'Activity',
+                    'time'        => $activity->created_at,
+                ];
+            }
+        }
+        /*
+        |--------------------------------------------------------------------------
+        | 6. COMMENTS
+        |--------------------------------------------------------------------------
+        */
+        $comments = Comment::query()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->when($employeeId, function ($query) use ($employeeId) {
+                $query->where('employee_id', $employeeId);
+            })
+            ->get();
+
+        foreach ($comments as $comment) {
+            if (
+                !empty($comment->latitude) &&
+                !empty($comment->longitude)
+            ) {
+                $routes[] = [
+                    'lat'         => $comment->latitude,
+                    'lng'         => $comment->longitude,
+                    'type'        => 'comment',
+                    'title'       => 'Comment',
+                    'description' => $comment->comment ?? 'Comment',
+                    'time'        => $comment->created_at,
+                ];
+            }
+        }
+        /*
+        |--------------------------------------------------------------------------
+        | Sort Route By Time
+        |--------------------------------------------------------------------------
+        */
+        usort($routes, function ($a, $b) {
+            return strtotime($a['time'] ?? '00:00:00')
+                <=> strtotime($b['time'] ?? '00:00:00');
+        });
+        /*
+        |--------------------------------------------------------------------------
+        | Counts
+        |--------------------------------------------------------------------------
+        */
+        $counts = [
+            'leads'       => 0,
+            'influencers' => 0,
+            'dealers'     => 0,
+            'orders'      => 0,
+            'activities'  => 0,
+            'comments'    => 0,
+        ];
+
+        foreach ($routes as $route) {
+            switch ($route['type']) {
+                case 'lead':
+                    $counts['leads']++;
+                    break;
+                case 'influencer':
+                    $counts['influencers']++;
+                    break;
+                case 'dealer':
+                    $counts['dealers']++;
+                    break;
+                case 'order':
+                    $counts['orders']++;
+                    break;
+                case 'activity':
+                    $counts['activities']++;
+                    break;
+                case 'comment':
+                    $counts['comments']++;
+                    break;
+            }
+        }
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
+        return response()->json([
+            'success' => true,
+            'date' => $date,
+            'counts' => $counts,
+            'routes' => $routes,
+        ]);
     }
+
     public function overview(){
         $targets = TripRoute::all(); 
         $employeeTypes = EmployeeType::all();
