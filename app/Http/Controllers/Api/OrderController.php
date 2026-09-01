@@ -4025,6 +4025,13 @@ public function orderApprovalSearch(Request $request)
                 ], 401);
             }
 
+            dd(
+    $dealerVisit->id,
+    $dealerVisit->product,
+    $dealerVisit->products,
+    $dealerVisit->other_brands,
+    $dealerVisit->other_brand_details
+);
             $dealerVisit = DealerVisit::with([
             'dealer:id,dealer_name,dealer_code,address,district',
             'aso:id,employee_code,name',
@@ -4045,10 +4052,7 @@ public function orderApprovalSearch(Request $request)
             'purpose_of_visit' => $dealerVisit->purpose_of_visit,
             
         ];
-        $data['product']=$dealerVisit->product;
-        $data['products']=$dealerVisit->products;
-        $data['other_brands']=$dealerVisit->other_brands;
-        $data['other_brand_details']=$dealerVisit->other_brand_details;
+       
 
         // Add details based on purpose of visit
         switch ($dealerVisit->purpose_of_visit) {
@@ -4062,10 +4066,11 @@ public function orderApprovalSearch(Request $request)
                 // $data['stock_details'] = $dealerVisit->stock_details ?? [];
                 $data['remarks'] = $dealerVisit->remarks;
                 $data['attachments'] = $dealerVisit->attachments ?? [];
-                $data['product']=$dealerVisit->product;
-                $data['products']=$dealerVisit->products;
-                $data['other_brands']=$dealerVisit->other_brands;
-                $data['other_brand_details']=$dealerVisit->other_brand_details;
+                
+                $data['product'] = $dealerVisit->product ?? null;
+                $data['products'] = $dealerVisit->products ?? [];
+                $data['other_brands'] = $dealerVisit->other_brands ?? false;
+                $data['other_brand_details'] = $dealerVisit->other_brand_details ?? [];
 
                 break;
 
