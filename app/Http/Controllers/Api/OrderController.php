@@ -4045,7 +4045,7 @@ public function orderApprovalSearch(Request $request)
             'purpose_of_visit' => $dealerVisit->purpose_of_visit,
             
         ];
-         $data['product']=$dealerVisit->product;
+        $data['product']=$dealerVisit->product;
         $data['products']=$dealerVisit->products;
         $data['other_brands']=$dealerVisit->other_brands;
         $data['other_brand_details']=$dealerVisit->other_brand_details;
