@@ -32,6 +32,8 @@ ADD COLUMN target_scheme_discussion ENUM('Yes','No') NOT NULL,
 ADD COLUMN new_order ENUM('Yes','No') NOT NULL,
 ADD COLUMN no_ace_attached ENUM('Yes','No') NOT NULL;
 
+ALTER TABLE `dealer_visits` CHANGE `rcb_poster_visible` `rcb_poster_visible` ENUM('Yes','No') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL, CHANGE `dealer_signage` `dealer_signage` ENUM('Yes','No') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL, CHANGE `pop_poster_available` `pop_poster_available` ENUM('Yes','No') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL, CHANGE `browser_available` `browser_available` ENUM('Yes','No') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL, CHANGE `target_scheme_discussion` `target_scheme_discussion` ENUM('Yes','No') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL, CHANGE `no_ace_attached` `no_ace_attached` VARCHAR(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL;
+
 ALTER TABLE dealer_visits
 MODIFY COLUMN no_ace_attached VARCHAR(256) NOT NULL;
 

@@ -3795,7 +3795,7 @@ public function orderApprovalSearch(Request $request)
                 $rules['target_scheme_discussion'] = 'required|in:Yes,No';
                 $rules['no_ace_attached'] = 'required';
                 if ($request->input('new_order') === 'Yes') {
-                    $rules = array_merge($rules, $this->getOrderValidationRules($employee));
+                   // $rules = array_merge($rules, $this->getOrderValidationRules($employee));
                 }
             }
 
