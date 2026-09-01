@@ -3845,8 +3845,8 @@ public function orderApprovalSearch(Request $request)
             $order = null;
 
             if (
-                ($purpose === 'Order Taking') ||
-                ($purpose === 'Casual Visit' && $request->input('new_order') === 'Yes')
+                ($purpose === 'Order Taking') 
+                //||                ($purpose === 'Casual Visit' && $request->input('new_order') === 'Yes')
             ) {
                 $orderData = $request->only([
                     'order_type', 'customer_type_id', 'order_category', 'lead_id', 'dealer_id','product_id',
