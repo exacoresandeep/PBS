@@ -4025,13 +4025,7 @@ public function orderApprovalSearch(Request $request)
                 ], 401);
             }
 
-            dd(
-    $dealerVisit->id,
-    $dealerVisit->product,
-    $dealerVisit->products,
-    $dealerVisit->other_brands,
-    $dealerVisit->other_brand_details
-);
+           
             $dealerVisit = DealerVisit::with([
             'dealer:id,dealer_name,dealer_code,address,district',
             'aso:id,employee_code,name',
