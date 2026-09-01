@@ -23,12 +23,19 @@ class DealerVisit extends Model
         "browser_available",
         "target_scheme_discussion",
         "no_ace_attached",
+         'product',
+        'products',
+        'other_brands',
+        'other_brand_details',
     ];
      protected $casts = [
         'attachments' => 'array', // store as JSON
         'stock_details' => 'array', // store as JSON
         'latitude' => 'string',
         'longitude' => 'string',
+        'products' => 'array',
+        'other_brands' => 'boolean',
+        'other_brand_details' => 'array',
     ];
     public $timestamps = false; 
 

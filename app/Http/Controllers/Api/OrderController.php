@@ -3759,14 +3759,6 @@ public function orderApprovalSearch(Request $request)
                 'remarks' => 'nullable|string',
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|string',
-                //"new_order" => 'required|in:Yes,No',
-
-                // "rcb_poster_visible" => 'required|in:Yes,No',
-                // "dealer_signage" => 'required|in:Yes,No',
-                // "pop_poster_available" => 'required|in:Yes,No',
-                // "browser_available" => 'required|in:Yes,No',
-                // "target_scheme_discussion" => 'required|in:Yes,No',
-                // "no_ace_attached" => 'required',
             ];
 
             $purpose = $request->input('purpose_of_visit');
@@ -3776,14 +3768,27 @@ public function orderApprovalSearch(Request $request)
             }
 
             if ($purpose === 'Stock Taking') {
-                $rules['stocks'] = 'required|array';
-                $rules['stocks.*.type'] = 'required|in:TATA,Other Brands';
-                $rules['stocks.*.quantity'] = 'required|numeric|min:0';
-                $rules['stocks.*.brand'] = 'nullable|string';
+                $rules['product'] = 'required|string';
+
+                $rules['products'] = 'required|array';
+                $rules['products.*.type'] = 'required|string';
+                $rules['products.*.quantity'] = 'required|numeric|min:0';
+                $rules['products.*.quantity_type'] = 'required|string';
+
+                $rules['other_brands'] = 'required|boolean';
+
+                $rules['other_brand_details'] = 'nullable|array|required_if:other_brands,true';
+                $rules['other_brand_details.*.brand_name'] = 'required|string';
+                $rules['other_brand_details.*.quantity'] = 'required|numeric|min:0';
+                $rules['other_brand_details.*.quantity_type'] = 'required|string';
+                $rules['other_brand_details.*.average_price'] = 'required|numeric|min:0';
+                $rules['other_brand_details.*.currency'] = 'required|string';
             }
 
             if ($purpose === 'Casual Visit') {
-                $rules['new_order'] = 'required|in:Yes,No'; /* |-------------------------------------------------------------------------- | Casual Visit Specific Fields |-------------------------------------------------------------------------- */ $rules['rcb_poster_visible'] = 'required|in:Yes,No';
+                $rules['new_order'] = 'required|in:Yes,No'; 
+                
+                $rules['rcb_poster_visible'] = 'required|in:Yes,No';
                 $rules['dealer_signage'] = 'required|in:Yes,No';
                 $rules['pop_poster_available'] = 'required|in:Yes,No';
                 $rules['browser_available'] = 'required|in:Yes,No';
@@ -3818,7 +3823,15 @@ public function orderApprovalSearch(Request $request)
                 'attachments' => !empty($uploadedAttachments)
                 ? $uploadedAttachments
                 : ($validatedData['attachments'] ?? []),
-                'stock_details' => $validatedData['stocks'] ?? null,
+                // New product fields
+                'product' => $validatedData['product'] ?? null,
+
+                'products' => $validatedData['products'] ?? [],
+
+                'other_brands' => $validatedData['other_brands'] ?? false,
+
+                'other_brand_details' => $validatedData['other_brand_details'] ?? [],
+
                 'rcb_poster_visible' => $validatedData['rcb_poster_visible'] ?? null,
                 'dealer_signage' => $validatedData['dealer_signage'] ?? null,
                 'pop_poster_available' => $validatedData['pop_poster_available'] ?? null,

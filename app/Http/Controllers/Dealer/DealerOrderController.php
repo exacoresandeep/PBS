@@ -437,7 +437,7 @@ private function normalizeDate(?string $date): ?string
                 'delivery_date' => $order->delivery_date
                 ? $order->delivery_date->format('d/m/Y')
                 : null,
-  		'total_amount' => round($order->total_amount, 2),
+  		        'total_amount' => round($order->total_amount, 2),
                 'additional_information' => $order->additional_information,
                 'status' => $order->status,
                 'created_by_dealer' => $order->created_by_dealer,

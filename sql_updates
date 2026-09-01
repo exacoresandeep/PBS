@@ -49,6 +49,11 @@ MODIFY COLUMN no_ace_attached VARCHAR(256) NOT NULL;
             ADD COLUMN longitude DECIMAL(11,8) NULL AFTER latitude;
         Removals (-)
 
+ALTER TABLE `dealer_visits`
+ADD COLUMN `product` VARCHAR(255) NULL,
+ADD COLUMN `products` LONGTEXT NULL,
+ADD COLUMN `other_brands` TINYINT(1) NOT NULL DEFAULT 0,
+ADD COLUMN `other_brand_details` LONGTEXT NULL;
 
 
                     
