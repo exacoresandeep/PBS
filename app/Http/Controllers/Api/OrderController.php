@@ -4014,7 +4014,6 @@ public function orderApprovalSearch(Request $request)
     }
     public function dealerVisitDetails($id)
     {
-        dd("awdwd");
         try {
             $employee = Auth::user();
 
@@ -4044,7 +4043,12 @@ public function orderApprovalSearch(Request $request)
             'district'    => $dealerVisit->dealer->district,
             'aso'         => $dealerVisit->aso ? $dealerVisit->aso->name : null,
             'purpose_of_visit' => $dealerVisit->purpose_of_visit,
+            
         ];
+         $data['product']=$dealerVisit->product;
+        $data['products']=$dealerVisit->products;
+        $data['other_brands']=$dealerVisit->other_brands;
+        $data['other_brand_details']=$dealerVisit->other_brand_details;
 
         // Add details based on purpose of visit
         switch ($dealerVisit->purpose_of_visit) {
