@@ -4054,9 +4054,14 @@ public function orderApprovalSearch(Request $request)
                 break;
 
             case 'Stock Taking':
-                $data['stock_details'] = $dealerVisit->stock_details ?? [];
+                // $data['stock_details'] = $dealerVisit->stock_details ?? [];
                 $data['remarks'] = $dealerVisit->remarks;
                 $data['attachments'] = $dealerVisit->attachments ?? [];
+                $data['product']=$dealerVisit->product;
+                $data['products']=$dealerVisit->products;
+                $data['other_brands']=$dealerVisit->other_brands;
+                $data['other_brand_details']=$dealerVisit->other_brand_details;
+
                 break;
 
             case 'Casual Visit':
