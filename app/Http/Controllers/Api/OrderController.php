@@ -4014,6 +4014,7 @@ public function orderApprovalSearch(Request $request)
     }
     public function dealerVisitDetails($id)
     {
+        dd("awdwd");
         try {
             $employee = Auth::user();
 
