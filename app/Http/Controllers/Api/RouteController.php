@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\AssignRoute;
 use App\Models\Dealer;
 use App\Models\TripRoute;
+use App\Models\OutstandingPaymentCommitment;
 use App\Models\District;
 use App\Models\EmployeeType;
 use App\Models\Employee;
 use App\Models\Activity;
+use App\Models\Attendance;
 use App\Models\DealerTripActivity;
 use App\Models\RescheduledRoute;
 use App\Models\Lead;
@@ -1126,10 +1128,9 @@ class RouteController extends Controller
     public function tracking(){     
         $districts = District::where("status","1")->orderBy("name","asc")->get(); 
         $designations = EmployeeType::orderBy("type_name","asc")->get();
-        $employees = Employee::select("employee_code","name","employee_type_id","district_id")->orderBy("name","asc")->get(); 
+        $employees = Employee::select("id","employee_code","name","employee_type_id","district_id")->orderBy("name","asc")->get(); 
         return view('sales.tracking.index', compact('districts','designations','employees'));
     }
-
 
     public function trackingData(Request $request)
     {
@@ -1140,26 +1141,28 @@ class RouteController extends Controller
             'date'           => 'required|date',
         ]);
 
-
         $date = $request->date;
 
-        $districtId = $request->district_id;
+        $districtId    = $request->district_id;
         $designationId = $request->designation_id;
-        $employeeId = $request->employee_id;
+        $employeeId    = $request->employee_id;
 
         $startDate = Carbon::parse($date)->startOfDay();
         $endDate   = Carbon::parse($date)->endOfDay();
 
-        $routes = [];
+        $routes   = [];
+        $timeline = [];
+
         /*
         |--------------------------------------------------------------------------
         | 1. LEADS
+        |--------------------------------------------------------------------------
         */
 
         $leads = Lead::query()
             ->whereBetween('created_at', [$startDate, $endDate])
             ->when($employeeId, function ($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId);
+                $query->where('created_by', $employeeId);
             })
             ->when($districtId, function ($query) use ($districtId) {
                 $query->where('district_id', $districtId);
@@ -1168,6 +1171,9 @@ class RouteController extends Controller
 
         foreach ($leads as $lead) {
 
+            /*
+            | Map
+            */
             if (
                 !empty($lead->latitude) &&
                 !empty($lead->longitude)
@@ -1182,22 +1188,39 @@ class RouteController extends Controller
                     'time'        => $lead->created_at,
                 ];
             }
+
+            /*
+            | Timeline
+            */
+            $timeline[] = [
+                'type'        => 'lead',
+                'time'        => Carbon::parse($lead->created_at)->format('h:i A'),
+                'title'       => 'Lead Captured',
+                'location'    => $lead->customer_name ?? 'Lead',
+                'description' => 'New lead created',
+                'sort_time'   => Carbon::parse($lead->created_at)->timestamp,
+            ];
         }
-       
+
+
         /*
         |--------------------------------------------------------------------------
         | 2. INFLUENCER VISITS
         |--------------------------------------------------------------------------
         */
+
         $influencerVisits = InfluencerVisit::query()
             ->whereBetween('created_at', [$startDate, $endDate])
             ->when($employeeId, function ($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId);
+                $query->where('created_by', $employeeId);
             })
             ->get();
 
         foreach ($influencerVisits as $visit) {
 
+            /*
+            | Map
+            */
             if (
                 !empty($visit->latitude) &&
                 !empty($visit->longitude)
@@ -1212,21 +1235,39 @@ class RouteController extends Controller
                     'time'        => $visit->created_at,
                 ];
             }
+
+            /*
+            | Timeline
+            */
+            $timeline[] = [
+                'type'        => 'influencer',
+                'time'        => Carbon::parse($visit->created_at)->format('h:i A'),
+                'title'       => 'Influencer Visit',
+                'location'    => $visit->influencer_name ?? 'Influencer Visit',
+                'description' => 'Influencer visited',
+                'sort_time'   => Carbon::parse($visit->created_at)->timestamp,
+            ];
         }
+
+
         /*
         |--------------------------------------------------------------------------
         | 3. DEALER VISITS
         |--------------------------------------------------------------------------
         */
-        $dealerVisits = DealerVisit::with("dealer")->query()
+
+        $dealerVisits = DealerVisit::with('dealer')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->when($employeeId, function ($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId);
+                $query->where('created_by', $employeeId);
             })
             ->get();
 
         foreach ($dealerVisits as $visit) {
 
+            /*
+            | Map
+            */
             if (
                 !empty($visit->latitude) &&
                 !empty($visit->longitude)
@@ -1241,21 +1282,39 @@ class RouteController extends Controller
                     'time'        => $visit->created_at,
                 ];
             }
+
+            /*
+            | Timeline
+            */
+            $timeline[] = [
+                'type'        => 'dealer',
+                'time'        => Carbon::parse($visit->created_at)->format('h:i A'),
+                'title'       => 'Dealer Visit',
+                'location'    => $visit->dealer->dealer_name ?? 'Dealer Visit',
+                'description' => 'Dealer visited',
+                'sort_time'   => Carbon::parse($visit->created_at)->timestamp,
+            ];
         }
+
+
         /*
         |--------------------------------------------------------------------------
         | 4. ORDERS
         |--------------------------------------------------------------------------
         */
-        $orders = Order::with("dealer")->query()
+
+        $orders = Order::with('dealer')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->when($employeeId, function ($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId);
+                $query->where('created_by', $employeeId);
             })
             ->get();
 
         foreach ($orders as $order) {
 
+            /*
+            | Map
+            */
             if (
                 !empty($order->latitude) &&
                 !empty($order->longitude)
@@ -1270,21 +1329,37 @@ class RouteController extends Controller
                     'time'        => $order->created_at,
                 ];
             }
+
+            /*
+            | Timeline
+            */
+            $timeline[] = [
+                'type'        => 'order',
+                'time'        => Carbon::parse($order->created_at)->format('h:i A'),
+                'title'       => 'Order Taken',
+                'location'    => $order->dealer->dealer_name ?? 'Order',
+                'description' => 'Order created',
+                'sort_time'   => Carbon::parse($order->created_at)->timestamp,
+            ];
         }
+
+
         /*
         |--------------------------------------------------------------------------
         | 5. ACTIVITIES
         |--------------------------------------------------------------------------
         */
-        $activities = Activity::with("activityType")->query()
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->when($employeeId, function ($query) use ($employeeId) {
-                $query->where('employee_id', $employeeId);
-            })
+
+        $activities = Activity::with('activityType')
+            ->whereBetween('assigned_date', [$startDate, $endDate])
+            ->where('employee_id', $employeeId)
             ->get();
 
         foreach ($activities as $activity) {
 
+            /*
+            | Map
+            */
             if (
                 !empty($activity->latitude) &&
                 !empty($activity->longitude)
@@ -1299,24 +1374,46 @@ class RouteController extends Controller
                     'time'        => $activity->created_at,
                 ];
             }
+
+            /*
+            | Timeline
+            */
+            $timeline[] = [
+                'type'        => 'activity',
+                'time'        => Carbon::parse($activity->created_at)->format('h:i A'),
+                'title'       => 'Activity',
+                'location'    => $activity->activityType->name ?? 'Activity',
+                'description' => 'Activity performed',
+                'sort_time'   => Carbon::parse($activity->created_at)->timestamp,
+            ];
         }
+
+
         /*
         |--------------------------------------------------------------------------
-        | 6. COMMENTS
+        | 6. COMMITMENTS / COMMENTS
         |--------------------------------------------------------------------------
         */
-        $comments = Comment::query()
-            ->whereBetween('created_at', [$startDate, $endDate])
+
+        $comments = OutstandingPaymentCommitment::whereBetween(
+                'committed_date',
+                [$startDate, $endDate]
+            )
             ->when($employeeId, function ($query) use ($employeeId) {
                 $query->where('employee_id', $employeeId);
             })
             ->get();
 
         foreach ($comments as $comment) {
+
+            /*
+            | Map
+            */
             if (
                 !empty($comment->latitude) &&
                 !empty($comment->longitude)
             ) {
+
                 $routes[] = [
                     'lat'         => $comment->latitude,
                     'lng'         => $comment->longitude,
@@ -1326,62 +1423,204 @@ class RouteController extends Controller
                     'time'        => $comment->created_at,
                 ];
             }
+
+            /*
+            | Timeline
+            */
+            $timeline[] = [
+                'type'        => 'commitment',
+                'time'        => Carbon::parse($comment->created_at)->format('h:i A'),
+                'title'       => 'Commitment',
+                'location'    => $comment->comment ?? 'Commitment',
+                'description' => 'Payment commitment',
+                'sort_time'   => Carbon::parse($comment->created_at)->timestamp,
+            ];
         }
+
+
         /*
         |--------------------------------------------------------------------------
         | Sort Route By Time
         |--------------------------------------------------------------------------
         */
+
         usort($routes, function ($a, $b) {
+
             return strtotime($a['time'] ?? '00:00:00')
                 <=> strtotime($b['time'] ?? '00:00:00');
+
         });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | ATTENDANCE
+        |--------------------------------------------------------------------------
+        */
+
+        $Attendance = Attendance::whereBetween(
+                'date',
+                [$startDate, $endDate]
+            )
+            ->when($employeeId, function ($query) use ($employeeId) {
+                $query->where('employee_id', $employeeId);
+            })
+            ->first();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PUNCH IN
+        |--------------------------------------------------------------------------
+        */
+
+        if ($Attendance && !empty($Attendance->punch_in)) {
+
+            $punchInDateTime = Carbon::parse(
+                $date . ' ' . $Attendance->punch_in
+            );
+
+            $timeline[] = [
+                'type'        => 'activity',
+                'time'        => $punchInDateTime->format('h:i A'),
+                'title'       => 'Punch In',
+                'location'    => $Attendance->punch_in_location ?? '',
+                'description' => '',
+                'sort_time'   => $punchInDateTime->timestamp,
+            ];
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PUNCH OUT
+        |--------------------------------------------------------------------------
+        */
+
+        if ($Attendance && !empty($Attendance->punch_out)) {
+
+            $punchOutDateTime = Carbon::parse(
+                $date . ' ' . $Attendance->punch_out
+            );
+
+            $timeline[] = [
+                'type'        => 'activity',
+                'time'        => $punchOutDateTime->format('h:i A'),
+                'title'       => 'Punch Out',
+                'location'    => $Attendance->punch_out_location ?? '',
+                'description' => '',
+                'sort_time'   => $punchOutDateTime->timestamp,
+            ];
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Sort Timeline
+        |--------------------------------------------------------------------------
+        */
+
+        usort($timeline, function ($a, $b) {
+
+            return ($a['sort_time'] ?? 0)
+                <=> ($b['sort_time'] ?? 0);
+
+        });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Remove Internal sort_time
+        |--------------------------------------------------------------------------
+        */
+
+        $timeline = array_map(function ($item) {
+
+            unset($item['sort_time']);
+
+            return $item;
+
+        }, $timeline);
+
+
         /*
         |--------------------------------------------------------------------------
         | Counts
         |--------------------------------------------------------------------------
         */
+
         $counts = [
-            'leads'       => 0,
-            'influencers' => 0,
-            'dealers'     => 0,
-            'orders'      => 0,
-            'activities'  => 0,
-            'comments'    => 0,
+            'leads'              => 0,
+            'influencers'        => 0,
+            'dealers'            => 0,
+            'orders'             => 0,
+            'activities'         => 0,
+            'comments'           => 0,
+            'commitments'        => 0,
+            'punch_in'           => $Attendance->punch_in ?? "",
+            'punch_out'          => $Attendance->punch_out ?? "",
+            'total_active_hours' => $Attendance->total_active_hours ?? "",
         ];
 
+
         foreach ($routes as $route) {
+
             switch ($route['type']) {
+
                 case 'lead':
                     $counts['leads']++;
                     break;
+
                 case 'influencer':
                     $counts['influencers']++;
                     break;
+
                 case 'dealer':
                     $counts['dealers']++;
                     break;
+
                 case 'order':
                     $counts['orders']++;
                     break;
+
                 case 'activity':
                     $counts['activities']++;
                     break;
+
                 case 'comment':
                     $counts['comments']++;
                     break;
             }
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Commitment Count
+        |--------------------------------------------------------------------------
+        */
+
+        $counts['commitments'] = $comments->count();
+
+
         /*
         |--------------------------------------------------------------------------
         | Response
         |--------------------------------------------------------------------------
         */
+
         return response()->json([
-            'success' => true,
-            'date' => $date,
-            'counts' => $counts,
-            'routes' => $routes,
+
+            'success'  => true,
+
+            'date'     => $date,
+
+            'counts'   => $counts,
+
+            'routes'   => $routes,
+
+            'timeline' => $timeline,
+
         ]);
     }
 
