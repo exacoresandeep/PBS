@@ -182,6 +182,7 @@ class AttendanceController extends Controller
             'total_active_hours' => 'required|string',
             'ending_remarks'     => 'required|string|max:1000',
             'ending_km'          => 'required',
+
          //   'ending_attachment'  => 'required|array',
          //   'ending_attachment.*'=> 'string'
         ]);
@@ -191,7 +192,9 @@ class AttendanceController extends Controller
             'total_active_hours' => $totalActiveHours,
             'ending_remarks'     => $request->ending_remarks,
             'ending_km'          => $request->ending_km,
-            'ending_attachment'  => json_encode($request->ending_attachment)
+            'ending_attachment'  => json_encode($request->ending_attachment),
+            'latitude_out' => $attendance->latitude_out,
+            'longitude_out' => $attendance->longitude_out,
         ]);
         //DB::table('attendance_v2')->insert([
           //          'c1' => 'out',

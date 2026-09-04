@@ -110,12 +110,12 @@
         color: #b73535;
     }
 
-    .summary-comments .summary-icon {
+    .summary-commitments .summary-icon {
         background: #eeecff;
         color: #6655d9;
     }
 
-    .summary-comments .summary-count {
+    .summary-commitments .summary-count {
         color: #6655d9;
     }
 
@@ -336,7 +336,7 @@
         background: #b73535;
     }
 
-    .legend-comment {
+    .legend-commitment {
         background: #6655d9;
     }
 
@@ -395,7 +395,7 @@
         background: #b73535;
     }
 
-    .marker-comment {
+    .marker-commitment {
         background: #6655d9;
     }
 
@@ -455,7 +455,7 @@
                     Select District
                 </option>
 
-                @foreach($districts ?? [] as $district)
+                @foreach($districts as $district)
 
                     <option value="{{ $district->id }}">
                         {{ $district->name }}
@@ -482,10 +482,10 @@
                     Select Designation
                 </option>
 
-                @foreach($designations ?? [] as $designation)
+                @foreach($designations as $designation)
 
                     <option value="{{ $designation->id }}">
-                        {{ $designation->name }}
+                        {{ $designation->type_name }}
                     </option>
 
                 @endforeach
@@ -499,20 +499,21 @@
         <div class="col-md-3 col-lg-2">
 
             <label class="filter-label">
-                Employee Name
+                Customer Type
             </label>
-
             <select id="route_employee"
                     class="form-select route-filter">
 
                 <option value="">
-                    Select Employee
+                    Select Type
                 </option>
 
-                @foreach($employees ?? [] as $employee)
+                @foreach($customertype as $type)
 
-                    <option value="{{ $employee->id }}">
-                        {{ $employee->name }}
+                    <option value="{{ $type->id }}">
+
+                        {{ $type->name }}
+
                     </option>
 
                 @endforeach
@@ -521,216 +522,24 @@
 
         </div>
 
-
         {{-- Date --}}
         <div class="col-md-3 col-lg-2">
-
             <label class="filter-label">
-                Date
+                Duration
             </label>
-
-            <input type="date"
-                   id="route_date"
-                   class="form-control route-filter">
-
+            <select name="duration" class="form-select">
+                <option value="Today">Today</option>
+                <option value="Yesterday">Yesterday</option>
+                <option value="This Week">This Week</option>
+                <option value="This Month">This Month</option>
+                <option value="3 Month">3 Month</option>
+            </select>
         </div>
-
-    </div>
-
-
-    {{-- SUMMARY CARDS --}}
-    <div class="row g-2 mb-3">
-
-        {{-- Leads --}}
-        <div class="col-6 col-md-4 col-lg">
-
-            <div class="summary-card summary-leads">
-
-                <div class="summary-icon">
-
-                    <i class="fa fa-users"></i>
-
-                </div>
-
-                <div>
-
-                    <div class="summary-label">
-                        Leads
-                    </div>
-
-                    <div class="summary-count"
-                         id="leadCount">
-
-                        5
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- Influencer Visit --}}
-        <div class="col-6 col-md-4 col-lg">
-
-            <div class="summary-card summary-influencer">
-
-                <div class="summary-icon">
-
-                    <i class="fa fa-users"></i>
-
-                </div>
-
-                <div>
-
-                    <div class="summary-label">
-                        Influencer Visit
-                    </div>
-
-                    <div class="summary-count"
-                         id="influencerCount">
-
-                        5
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- Dealer Visit --}}
-        <div class="col-6 col-md-4 col-lg">
-
-            <div class="summary-card summary-dealer">
-
-                <div class="summary-icon">
-
-                    <i class="fa fa-building"></i>
-
-                </div>
-
-                <div>
-
-                    <div class="summary-label">
-                        Dealer Visit
-                    </div>
-
-                    <div class="summary-count"
-                         id="dealerCount">
-
-                        5
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- Orders --}}
-        <div class="col-6 col-md-4 col-lg">
-
-            <div class="summary-card summary-orders">
-
-                <div class="summary-icon">
-
-                    <i class="fa fa-shopping-bag"></i>
-
-                </div>
-
-                <div>
-
-                    <div class="summary-label">
-                        Orders
-                    </div>
-
-                    <div class="summary-count"
-                         id="orderCount">
-
-                        5
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- Activities --}}
-        <div class="col-6 col-md-4 col-lg">
-
-            <div class="summary-card summary-activities">
-
-                <div class="summary-icon">
-
-                    <i class="fa fa-clipboard"></i>
-
-                </div>
-
-                <div>
-
-                    <div class="summary-label">
-                        Activities
-                    </div>
-
-                    <div class="summary-count"
-                         id="activityCount">
-
-                        5
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- Comments --}}
-        <div class="col-6 col-md-4 col-lg">
-
-            <div class="summary-card summary-comments">
-
-                <div class="summary-icon">
-
-                    <i class="fa fa-comments"></i>
-
-                </div>
-
-                <div>
-
-                    <div class="summary-label">
-                        Comments
-                    </div>
-
-                    <div class="summary-count"
-                         id="commentCount">
-
-                        5
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
     </div>
 
 
     {{-- MAP + TIMELINE --}}
-    <div class="row g-0 route-main-card">
+    <div class="row g-0 route-main-card resultcard d-none">
 
         {{-- MAP --}}
         <div class="col-lg-8">
@@ -800,11 +609,11 @@
 
                     <div class="legend-item">
 
-                        <span class="legend-icon legend-comment">
-                            <i class="fa fa-comments"></i>
+                        <span class="legend-icon legend-commitment">
+                            <i class="fa fa-handshake-o"></i>
                         </span>
 
-                        Comments
+                        commitments
 
                     </div>
 
@@ -815,358 +624,1089 @@
         </div>
 
 
+        {{-- TIMELINE --}}
+        <div class="col-lg-4">
+
+            <div class="timeline-panel">
+
+                {{-- Attendance --}}
+                <div class="attendance-summary">
+
+                    <div class="attendance-item">
+
+                        <div class="attendance-label">
+                            Punch In
+                        </div>
+
+                        <div class="attendance-value punch-in">
+                            09:05 AM
+                        </div>
+
+                    </div>
+
+
+                    <div class="attendance-item">
+
+                        <div class="attendance-label">
+                            Punch Out
+                        </div>
+
+                        <div class="attendance-value punch-out">
+                            06:05 PM
+                        </div>
+
+                    </div>
+
+
+                    <div class="attendance-item">
+
+                        <div class="attendance-label">
+                            Working Hours
+                        </div>
+
+                        <div class="attendance-value working-hours">
+                            09:00 Hours
+                        </div>
+
+                    </div>
+
+                </div>
+                <div class="no-attendance d-none">
+                    <p>No attendance has been recorded for this person on the selected date.</p>
+                </div>
+
+                {{-- Timeline Header --}}
+                <div class="timeline-header">
+
+                    <h6 class="timeline-title">
+                        Timeline Overview
+                    </h6>
+
+                    <select id="timelineActivityFilter"
+                            class="form-select timeline-filter">
+
+                        <option value="all">
+                            All Activities
+                        </option>
+
+                        <option value="lead">
+                            Leads
+                        </option>
+
+                        <option value="influencer">
+                            Influencer Visit
+                        </option>
+
+                        <option value="dealer">
+                            Dealer Visit
+                        </option>
+
+                        <option value="order">
+                            Orders
+                        </option>
+
+                        <option value="activity">
+                            Activities
+                        </option>
+
+                        <option value="commitment">
+                            commitments
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                {{-- Timeline --}}
+                <div class="timeline-scroll">
+
+                    <div class="timeline" id="routeTimeline">
+
+
+
+                    </div>
+                </div>
+                
+            </div>
+            
+        </div>
         
+    </div>
+</div>
+<div class="modal fade"
+     id="routeSummaryModal"
+     tabindex="-1"
+     aria-labelledby="routeSummaryModalLabel"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title"
+                    id="routeSummaryModalLabel">
+                    Details
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div id="routeSummaryModalContent">
+
+                    <div class="text-center py-4">
+                        Loading...
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
 
     </div>
 
 </div>
-
-
 {{-- Leaflet CSS --}}
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       crossorigin=""/>
 
-
 {{-- Leaflet JS --}}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         crossorigin=""></script>
 
-
 <script>
-
 $(document).ready(function () {
+    function renderSummaryModal(type, data) {
+
+    let container =
+        $('#routeSummaryModalContent');
+
+    if (!Array.isArray(data) || data.length === 0) {
+
+        container.html(`
+            <div class="text-center text-muted py-4">
+                No records found for the selected date.
+            </div>
+        `);
+
+        return;
+    }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Map
-    |--------------------------------------------------------------------------
-    */
+    let html = `
+        <div class="table-responsive">
 
-    let routeMap = L.map('routeMap', {
+            <table class="table table-sm table-bordered table-hover">
+
+                <thead>
+                    <tr>
+    `;
+
+
+    if (type === 'lead') {
+
+        html += `
+            <th>#</th>
+            <th>Time</th>
+            <th>Customer</th>
+            <th>Customer Type</th>
+        `;
+
+    }
+
+    else if (type === 'influencer') {
+
+        html += `
+            <th>#</th>
+            <th>Time</th>
+            <th>Influencer Name </th>
+        `;
+
+    }        
+
+    else if (type === 'dealer') {
+
+        html += `
+            <th>#</th>
+            <th>Time</th>
+            <th>Dealer</th>
+        `;
+
+    }
+
+    else if (type === 'order') {
+
+        html += `
+            <th>#</th>
+            <th>Time</th>
+            <th>Dealer</th>
+            <th>Order ID</th>
+        `;
+
+    }
+
+    else if (type === 'activity') {
+
+        html += `
+            <th>#</th>
+            <th>Time</th>
+            <th>Dealer</th>
+            <th>Activity</th>
+        `;
+
+    }
+
+    else if (type === 'commitment') {
+
+        html += `
+            <th>#</th>
+            <th>Committed Date</th>
+            <th>Dealer</th>
+        `;
+
+    }
+
+
+    html += `
+                    </tr>
+                </thead>
+
+                <tbody>
+    `;
+
+
+    data.forEach(function (item, index) {
+
+        html += `<tr>`;
+
+        html += `
+            <td>${index + 1}</td>
+        `;
+
+
+        if (type === 'lead') {
+
+            html += `
+                <td>${item.time ?? '-'}</td>
+                <td>${item.customer_name ?? '-'}</td>
+                <td>${item.customer_type ?? '-'}</td>
+            `;
+
+        }
+
+        else if (type === 'influencer') {
+
+            html += `
+            <td>${item.time ?? '-'}</td>
+            <td>${item.influencer_name ?? '-'}</td>
+            `;
+
+        }
+
+        else if (type === 'dealer') {
+
+            html += `
+                <td>${item.time ?? '-'}</td>
+                <td>${item.dealer_name ?? '-'}</td>
+            `;
+
+        }
+
+        else if (type === 'order') {
+
+            html += `
+                <td>${item.time ?? '-'}</td>
+                <td>${item.dealer_name ?? '-'}</td>
+                <td>${item.order_number ?? '-'}</td>
+            `;
+
+        }
+
+        else if (type === 'activity') {
+
+            html += `
+                <td>${item.time ?? '-'}</td>
+                <td>${item.dealer ?? '-'}</td>
+                <td>${item.activity_name ?? '-'}</td>
+            `;
+
+        }
+
+        else if (type === 'commitment') {
+
+            html += `
+            <td>${item.time ?? '-'}</td>
+                <td>${item.dealer ?? '-'}</td>
+            `;
+
+        }
+
+
+        html += `</tr>`;
+
+    });
+
+
+    html += `
+                </tbody>
+
+            </table>
+
+        </div>
+    `;
+
+
+    container.html(html);
+}
+    $(document).on('click', '.summary-card', function () {
+
+        let type = $(this).data('type');
+
+        let titles = {
+            lead: 'Lead Details',
+            influencer: 'Influencer Visit Details',
+            dealer: 'Dealer Visit Details',
+            order: 'Order Details',
+            activity: 'Activity Details',
+            commitment: 'Commitment Details'
+        };
+
+        let title = titles[type] || 'Details';
+
+        $('#routeSummaryModalLabel').text(title);
+
+        $('#routeSummaryModalContent').html(`
+            <div class="text-center py-4">
+                <i class="fa fa-spinner fa-spin"></i>
+                Loading...
+            </div>
+        `);
+
+
+        // Get current filters
+        let district =
+            $('#route_district').val();
+
+        let designation =
+            $('#route_designation').val();
+
+        let employee =
+            $('#route_employee').val();
+
+        let date =
+            $('#route_date').val();
+
+
+        // Open modal
+        $('#routeSummaryModal').modal('show');
+
+
+        $.ajax({
+
+            url: "{{ url('/tracking/trackingDetails') }}",
+
+            type: "GET",
+
+            data: {
+                type: type,
+                district_id: district,
+                designation_id: designation,
+                employee_id: employee,
+                date: date
+            },
+
+            success: function (response) {
+
+                if (!response.success) {
+
+                    $('#routeSummaryModalContent').html(`
+                        <div class="alert alert-warning">
+                            No details found.
+                        </div>
+                    `);
+
+                    return;
+                }
+
+                renderSummaryModal(
+                    type,
+                    response.data || []
+                );
+            },
+
+            error: function (xhr) {
+
+                console.error(
+                    'Summary Details Error:',
+                    xhr.responseText
+                );
+
+                $('#routeSummaryModalContent').html(`
+                    <div class="alert alert-danger">
+                        Unable to load details.
+                    </div>
+                `);
+            }
+
+        });
+
+    });
+    function renderTimeline(timelineData) {
+
+        let timeline = $('#routeTimeline');
+
+        timeline.empty();
+
+        if (!Array.isArray(timelineData) || timelineData.length === 0) {
+
+            timeline.html(`
+                <div class="text-center text-muted"
+                    style="font-size:11px;padding:30px 10px;">
+                    No activities found for the selected date.
+                </div>
+            `);
+
+            return;
+        }
+
+        timelineData.forEach(function (item) {
+
+            let type = item.type || 'activity';
+
+            let time = item.time || '';
+
+            let title = item.title || '';
+
+            let location = item.location || '';
+
+            let description = item.description || '';
+
+            timeline.append(`
+
+                <div class="timeline-item"
+                    data-type="${type}">
+
+                    <div class="timeline-time">
+                        ${time}
+                    </div>
+
+                    <div class="timeline-dot-wrapper">
+
+                        <div class="timeline-dot"></div>
+
+                    </div>
+
+                    <div class="timeline-content">
+
+                        <div class="timeline-event">
+                            ${title}
+                        </div>
+
+                        <div class="timeline-location">
+                            ${location}
+                        </div>
+
+                        ${
+                            description
+                                ? `
+                                    <div class="timeline-location">
+                                        ${description}
+                                    </div>
+                                `
+                                : ''
+                        }
+
+                    </div>
+
+                </div>
+
+            `);
+
+        });
+
+        applyTimelineFilter();
+
+    }
+
+    $(".resultcard").addClass("d-none");
+
+    let routeMarkers = [];
+    let routePolyline = null;
+    let routeMap = null;
+
+    routeMap = L.map('routeMap', {
         zoomControl: true
-    }).setView(
-        [10.5276, 76.2144],
-        11
-    );
+    }).setView([10.5276, 76.2144], 11);
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | OpenStreetMap
-    |--------------------------------------------------------------------------
-    */
 
     L.tileLayer(
         'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         {
             maxZoom: 19,
-            attribution:
-                '&copy; OpenStreetMap contributors'
+            attribution: '&copy; OpenStreetMap contributors'
         }
     ).addTo(routeMap);
 
+    const employeeSelect =
+        document.getElementById('route_employee');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Marker Helper
-    |--------------------------------------------------------------------------
-    */
+    const employeeOptions =
+        Array.from(employeeSelect.options);
+
+
+    function filterEmployees() {
+
+        const selectedDistrict =
+            $('#route_district').val();
+
+        const selectedDesignation =
+            $('#route_designation').val();
+
+
+        employeeOptions.forEach(function (option) {
+
+            if (option.value === '') {
+
+                option.hidden = false;
+
+                return;
+            }
+
+
+            const employeeDistrict =
+                option.getAttribute('data-district');
+
+            const employeeDesignation =
+                option.getAttribute('data-designation');
+
+            if (
+                selectedDistrict === '' &&
+                selectedDesignation === ''
+            ) {
+
+                option.hidden = false;
+
+                return;
+            }
+
+            if (
+                selectedDistrict !== '' &&
+                selectedDesignation !== ''
+            ) {
+
+                option.hidden = !(
+                    String(employeeDistrict) ===
+                    String(selectedDistrict)
+
+                    &&
+
+                    String(employeeDesignation) ===
+                    String(selectedDesignation)
+                );
+
+                return;
+            }
+
+            if (selectedDistrict !== '') {
+
+                option.hidden = !(
+                    String(employeeDistrict) ===
+                    String(selectedDistrict)
+                );
+
+                return;
+            }
+
+            if (selectedDesignation !== '') {
+
+                option.hidden = !(
+                    String(employeeDesignation) ===
+                    String(selectedDesignation)
+                );
+
+                return;
+            }
+
+        });
+
+        employeeSelect.value = '';
+    }
+
+    $('#route_district').on('change', function () {
+        filterEmployees();
+
+        if ($('#route_date').val() && $('#route_employee').val()) {
+            loadRouteTracking();
+        }
+    });
+
+    $('#route_designation').on('change', function () {
+        filterEmployees();
+
+        if ($('#route_date').val() && $('#route_employee').val()) {
+            loadRouteTracking();
+        }
+    });
+
+    function clearRouteMap() {
+
+        routeMarkers.forEach(function (marker) {
+            if (routeMap.hasLayer(marker)) {
+                routeMap.removeLayer(marker);
+            }
+        });
+
+        routeMarkers = [];
+
+        if (routePolyline) {
+            if (routeMap.hasLayer(routePolyline)) {
+                routeMap.removeLayer(routePolyline);
+            }
+            routePolyline = null;
+        }
+    }
 
     function createMarkerIcon(type) {
-
         let className = 'marker-lead';
-
         let icon = 'fa-users';
-
-
         switch (type) {
-
+            case 'lead':
+                className = 'marker-lead';
+                icon = 'fa-users';
+                break;
             case 'influencer':
-
                 className = 'marker-influencer';
                 icon = 'fa-users';
-
                 break;
-
-
             case 'dealer':
-
                 className = 'marker-dealer';
                 icon = 'fa-building';
-
                 break;
-
-
             case 'order':
-
                 className = 'marker-order';
                 icon = 'fa-shopping-bag';
-
                 break;
-
-
             case 'activity':
-
                 className = 'marker-activity';
                 icon = 'fa-clipboard';
-
                 break;
-
-
-            case 'comment':
-
-                className = 'marker-comment';
-                icon = 'fa-comments';
-
+            case 'commitment':
+                className = 'marker-commitment';
+                icon = 'fa-handshake-o';
                 break;
-
+            default:
+                className = 'marker-lead';
+                icon = 'fa-map-marker';
+                break;
         }
-
-
         return L.divIcon({
-
             className: '',
-
             html: `
                 <div class="route-marker ${className}">
                     <i class="fa ${icon}"></i>
                 </div>
             `,
-
             iconSize: [25, 25],
-
             iconAnchor: [12, 25],
-
             popupAnchor: [0, -25]
-
         });
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Demo Route Data
-    |--------------------------------------------------------------------------
-    */
-
-    let routeData = [
-
-        {
-            lat: 10.5700,
-            lng: 76.1900,
-            type: 'lead',
-            title: 'Lead',
-            description: 'ABC, Koratty, Thrissur'
-        },
-
-        {
-            lat: 10.5500,
-            lng: 76.2000,
-            type: 'influencer',
-            title: 'Influencer Visit',
-            description: 'Steel Hub, Chingavanam, Thrissur'
-        },
-
-        {
-            lat: 10.5350,
-            lng: 76.2100,
-            type: 'dealer',
-            title: 'Dealer Visit',
-            description: 'ABC Steels, Chingavanam'
-        },
-
-        {
-            lat: 10.5150,
-            lng: 76.2200,
-            type: 'order',
-            title: 'Order Taken',
-            description: 'Steel Hub Pvt Limited, Pota'
-        },
-        {
-            lat: 10.5150,
-            lng: 78.2200,
-            type: 'order',
-            title: 'Order Taken',
-            description: 'Steel Hub Pvt Limited, Pota'
-        },
-        {
-            lat: 10.5150,
-            lng: 73.2200,
-            type: 'order',
-            title: 'Order Taken',
-            description: 'Steel Hub Pvt Limited, Pota'
-        },
-
-        {
-            lat: 10.4950,
-            lng: 76.2300,
-            type: 'lead',
-            title: 'Lead',
-            description: 'ABC Steels, Potta'
-        },
-
-        {
-            lat: 10.4700,
-            lng: 76.2400,
-            type: 'order',
-            title: 'Order',
-            description: 'Steel Hub Pvt Limited'
-        },
-
-        {
-            lat: 10.4400,
-            lng: 76.2500,
-            type: 'comment',
-            title: 'Comment',
-            description: 'ABC Steels, Potta'
-        }
-
-    ];
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Add Route Line
-    |--------------------------------------------------------------------------
-    */
-
-    let routeCoordinates = routeData.map(function (item) {
-
-        return [
-            item.lat,
-            item.lng
-        ];
-
-    });
-
-
-    L.polyline(
-        routeCoordinates,
-        {
-            color: '#2874d8',
-            weight: 4,
-            opacity: 0.8
-        }
-    ).addTo(routeMap);
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Add Markers
-    |--------------------------------------------------------------------------
-    */
-
-    routeData.forEach(function (item) {
-
-        L.marker(
-            [item.lat, item.lng],
-            {
-                icon: createMarkerIcon(item.type)
-            }
-        )
-        .addTo(routeMap)
-        .bindPopup(`
-
-            <div class="route-popup">
-
-                <div class="route-popup-title">
-                    ${item.title}
-                </div>
-
-                <div class="route-popup-text">
-                    ${item.description}
-                </div>
-
-            </div>
-
-        `);
-
-    });
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Fit Map
-    |--------------------------------------------------------------------------
-    */
-
-    if (routeCoordinates.length) {
-
-        routeMap.fitBounds(
-            routeCoordinates,
-            {
-                padding: [30, 30]
-            }
+    function updateSummaryCounts(counts) {
+        
+        counts = counts || {};
+        $('#leadCount').text(
+            counts.leads ?? 0
         );
+        $('#influencerCount').text(
+            counts.influencers ?? 0
+        );
+        $('#dealerCount').text(
+            counts.dealers ?? 0
+        );
+        $('#orderCount').text(
+            counts.orders ?? 0
+        );
+        $('#activityCount').text(
+            counts.activities ?? 0
+        );
+        $('#commitmentCount').text(
+            counts.commitments ?? 0
+        );
+        $('.punch-in').text(
+            counts.punch_in ?? 0
+        );
+        $('.punch-out').text(
+            counts.punch_out ?? 0
+        );
+        $('.working-hours').text(
+            counts.total_active_hours ?? 0
+        );
+        if(counts.punch_in == ""){
+            $(".no-attendance").removeClass("d-none");
+        }
+       
+    }
+
+    function hideResult() {
+        $(".resultcard")
+            .addClass("d-none");
+        clearRouteMap();
+        updateSummaryCounts({});
+    }
+
+    function showResult() {
+        $(".resultcard")
+            .removeClass("d-none");
+    }
+
+    function loadRouteTracking() {
+        let district =
+            $('#route_district').val();
+        let designation =
+            $('#route_designation').val();
+        let employee =
+            $('#route_employee').val();
+        let date =
+            $('#route_date').val();
+
+        if (!date) {
+            hideResult();
+            return;
+        }
+        showResult();
+
+        clearRouteMap();
+
+        $.ajax({
+            url: "{{ url('/tracking/route-tracking-data') }}",
+            type: "GET",
+            data: {
+                district_id: district,
+                designation_id: designation,
+                employee_id: employee,
+                date: date
+            },
+            beforeSend: function () {
+                console.log(
+                    'Loading route data...'
+                );
+            },
+            success: function (response) {
+                $(".no-attendance").addClass("d-none");
+                console.log(
+                    'Route Tracking Response:',
+                    response
+                );
+                updateSummaryCounts(
+                    response.counts
+                );
+                renderTimeline(
+                    response.timeline || []
+                );
+
+                let routeData =
+                    response.routes || [];
+
+                if (
+                    !Array.isArray(routeData) ||
+                    routeData.length === 0
+                ) {
+                    console.log(
+                        'No route data found for:',
+                        date
+                    );
+                    return;
+                }
+                let routeCoordinates = [];
+
+                routeData.forEach(function (item) {
+                    let lat =
+                        parseFloat(item.lat);
+
+                    let lng =
+                        parseFloat(item.lng);
+
+                    if (isNaN(lat) || isNaN(lng)) {
+                        return;
+                    }
+                    if (lat === 0 || lng === 0) {
+                        return;
+                    }
+                    routeCoordinates.push([
+                        lat,
+                        lng
+                    ]);
+
+                    let marker =
+                        L.marker(
+                            [lat, lng],
+                            {
+                                icon: createMarkerIcon(item.type)
+                            }
+                        );
+
+                    marker.routeType = item.type;
+
+                    marker.addTo(routeMap);
+
+                    marker.bindPopup(`
+                        <div class="route-popup">
+                            <div class="route-popup-title">
+                                ${item.title ?? ''}
+                            </div>
+
+                            <div class="route-popup-text">
+                                ${item.description ?? ''}
+                            </div>
+                        </div>
+                    `);
+
+                    routeMarkers.push(marker);
+                });
+
+                if (routeCoordinates.length === 0) {
+                    console.log(
+                        'Route data exists but no valid coordinates found.'
+                    );
+                    return;
+                }
+
+                if (routeCoordinates.length > 1) {
+                    routePolyline =
+                        L.polyline(
+                            routeCoordinates,
+                            {
+                                color: '#2874d8',
+                                weight: 4,
+                                opacity: 0.8
+                            }
+                        )
+                        .addTo(routeMap);
+                }
+
+                routeMap.fitBounds(
+                    routeCoordinates,
+                    {
+                        padding: [30, 30]
+                    }
+                );
+
+                setTimeout(function () {
+                    routeMap.invalidateSize();
+                }, 200);
+            },
+
+            error: function (xhr) {
+                console.error(
+                    'Route Tracking Error:',
+                    xhr.status,
+                    xhr.responseText
+                );
+                clearRouteMap();
+                updateSummaryCounts({});
+            }
+        });
+    }
+ 
+    $('#route_district,#route_designation').on('change', function () {
+        filterEmployees();
+    });
+    $('#route_date').on('change', function () {
+        let date =
+            $(this).val();
+        if (!date) {
+            hideResult();
+            return;
+        }
+        if ($('#route_date').val() && $('#route_employee').val()) {
+            loadRouteTracking();
+        }
+    });
+
+    $('#route_employee').on('change', function () {
+        if ($('#route_date').val() && $('#route_employee').val()) {
+            loadRouteTracking();
+        }
+    });
+
+   
+    function applyTimelineFilterold() {
+
+        let selected =
+            $('#timelineActivityFilter').val();
+
+        $('#routeTimeline .timeline-item').each(function () {
+
+            let type =
+                $(this).data('type');
+
+            if (
+                selected === 'all' ||
+                selected === type
+            ) {
+
+                $(this).show();
+
+            } else {
+
+                $(this).hide();
+
+            }
+
+        });
 
     }
 
+    function applyTimelineFilter() {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Timeline Filter
-    |--------------------------------------------------------------------------
-    */
+        let selected =
+            $('#timelineActivityFilter').val();
 
-    $('#timelineActivityFilter').on(
-        'change',
-        function () {
+        // -----------------------------------
+        // Filter Timeline
+        // -----------------------------------
+        $('#routeTimeline .timeline-item').each(function () {
 
-            let selected =
-                $(this).val();
+            let type =
+                $(this).data('type');
+
+            if (
+                selected === 'all' ||
+                selected === type
+            ) {
+
+                $(this).show();
+
+            } else {
+
+                $(this).hide();
+
+            }
+
+        });
 
 
-            $('.timeline-item').each(
-                function () {
+        // -----------------------------------
+        // Filter Map Markers
+        // -----------------------------------
+        routeMarkers.forEach(function (marker) {
 
-                    let type =
-                        $(this).data('type');
+            let markerType =
+                marker.routeType;
+
+            if (
+                selected === 'all' ||
+                selected === markerType
+            ) {
+
+                if (!routeMap.hasLayer(marker)) {
+                    marker.addTo(routeMap);
+                }
+
+            } else {
+
+                if (routeMap.hasLayer(marker)) {
+                    routeMap.removeLayer(marker);
+                }
+
+            }
+
+        });
 
 
-                    if (
-                        selected === 'all' ||
-                        selected === type
-                    ) {
+        // -----------------------------------
+        // Refit map based on visible markers
+        // -----------------------------------
+        let visibleCoordinates = [];
 
-                        $(this).show();
+        routeMarkers.forEach(function (marker) {
 
-                    } else {
+            if (routeMap.hasLayer(marker)) {
 
-                        $(this).hide();
+                let latLng =
+                    marker.getLatLng();
 
+                visibleCoordinates.push([
+                    latLng.lat,
+                    latLng.lng
+                ]);
+
+            }
+
+        });
+
+
+        // Remove existing polyline
+        if (routePolyline) {
+
+            if (routeMap.hasLayer(routePolyline)) {
+                routeMap.removeLayer(routePolyline);
+            }
+
+            routePolyline = null;
+        }
+
+
+        // Draw filtered route
+        if (visibleCoordinates.length > 1) {
+
+            routePolyline =
+                L.polyline(
+                    visibleCoordinates,
+                    {
+                        color: '#2874d8',
+                        weight: 4,
+                        opacity: 0.8
                     }
+                )
+                .addTo(routeMap);
 
+        }
+
+
+        // Fit map to visible markers
+        if (visibleCoordinates.length > 0) {
+
+            routeMap.fitBounds(
+                visibleCoordinates,
+                {
+                    padding: [30, 30]
                 }
             );
 
         }
+
+        setTimeout(function () {
+            routeMap.invalidateSize();
+        }, 200);
+    }
+    $('#timelineActivityFilter').on(
+        'change',
+        function () {
+
+            applyTimelineFilter();
+
+        }
     );
+    filterEmployees();
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Filter Change
-    |--------------------------------------------------------------------------
-    */
-
-    $('#route_district, #route_designation, #route_employee, #route_date')
-        .on('change', function () {
-
-            /*
-            | Call your API here
-            |
-            | Example:
-            |
-            | loadRouteTracking();
-            */
-
-        });
-
-
+    setTimeout(function () {
+       routeMap.invalidateSize();
+    }, 300);
 });
 
 </script>
-
 @endsection

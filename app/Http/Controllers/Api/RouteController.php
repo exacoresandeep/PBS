@@ -11,6 +11,7 @@ use App\Models\District;
 use App\Models\EmployeeType;
 use App\Models\Employee;
 use App\Models\Activity;
+use App\Models\CustomerType;
 use App\Models\Attendance;
 use App\Models\DealerTripActivity;
 use App\Models\RescheduledRoute;
@@ -1351,7 +1352,7 @@ class RouteController extends Controller
         */
 
         $activities = Activity::with('activityType')
-            ->whereBetween('assigned_date', [$startDate, $endDate])
+            ->whereBetween('updated_at', [$startDate, $endDate])
             ->where('employee_id', $employeeId)
             ->get();
 
@@ -1371,7 +1372,7 @@ class RouteController extends Controller
                     'type'        => 'activity',
                     'title'       => 'Activity',
                     'description' => $activity->activityType->name ?? 'Activity',
-                    'time'        => $activity->created_at,
+                    'time'        => $activity->updated_at,
                 ];
             }
 
@@ -1380,11 +1381,11 @@ class RouteController extends Controller
             */
             $timeline[] = [
                 'type'        => 'activity',
-                'time'        => Carbon::parse($activity->created_at)->format('h:i A'),
+                'time'        => Carbon::parse($activity->updated_at)->format('h:i A'),
                 'title'       => 'Activity',
                 'location'    => $activity->activityType->name ?? 'Activity',
                 'description' => 'Activity performed',
-                'sort_time'   => Carbon::parse($activity->created_at)->timestamp,
+                'sort_time'   => Carbon::parse($activity->updated_at)->timestamp,
             ];
         }
 
@@ -1417,8 +1418,8 @@ class RouteController extends Controller
                 $routes[] = [
                     'lat'         => $comment->latitude,
                     'lng'         => $comment->longitude,
-                    'type'        => 'comment',
-                    'title'       => 'Comment',
+                    'type'        => 'commitment',
+                    'title'       => 'Commitment',
                     'description' => $comment->comment ?? 'Comment',
                     'time'        => $comment->created_at,
                 ];
@@ -1451,7 +1452,6 @@ class RouteController extends Controller
 
         });
 
-
         /*
         |--------------------------------------------------------------------------
         | ATTENDANCE
@@ -1467,24 +1467,26 @@ class RouteController extends Controller
             })
             ->first();
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | PUNCH IN
-        |--------------------------------------------------------------------------
-        */
-
         if ($Attendance && !empty($Attendance->punch_in)) {
 
             $punchInDateTime = Carbon::parse(
                 $date . ' ' . $Attendance->punch_in
             );
 
+            if (!empty($Attendance->latitude) && !empty($Attendance->longitude)) {
+                    $routes[] = [
+                        'lat'         => $Attendance->latitude,
+                        'lng'         => $Attendance->longitude,
+                        'type'        => 'punch_in',
+                        'title'       => 'Punch In',
+                        'description' => 'Punch In',
+                        'time'        => $Attendance->punch_in,
+                    ];
+            }
             $timeline[] = [
-                'type'        => 'activity',
+                'type'        => 'punch_in',
                 'time'        => $punchInDateTime->format('h:i A'),
                 'title'       => 'Punch In',
-                'location'    => $Attendance->punch_in_location ?? '',
                 'description' => '',
                 'sort_time'   => $punchInDateTime->timestamp,
             ];
@@ -1499,19 +1501,29 @@ class RouteController extends Controller
 
         if ($Attendance && !empty($Attendance->punch_out)) {
 
-            $punchOutDateTime = Carbon::parse(
+            $punchInOutDateTime = Carbon::parse(
                 $date . ' ' . $Attendance->punch_out
             );
 
+            if (!empty($Attendance->latitude_out) && !empty($Attendance->longitude_out)) {
+                    $routes[] = [
+                        'lat'         => $Attendance->latitude_out,
+                        'lng'         => $Attendance->longitude_out,
+                        'type'        => 'punch_out',
+                        'title'       => 'Punch Out',
+                        'description' => 'Punch Out',
+                        'time'        => $Attendance->punch_out,
+                    ];
+            }
             $timeline[] = [
-                'type'        => 'activity',
-                'time'        => $punchOutDateTime->format('h:i A'),
+                'type'        => 'punch_out',
+                'time'        => $punchInOutDateTime->format('h:i A'),
                 'title'       => 'Punch Out',
-                'location'    => $Attendance->punch_out_location ?? '',
                 'description' => '',
-                'sort_time'   => $punchOutDateTime->timestamp,
+                'sort_time'   => $punchInOutDateTime->timestamp,
             ];
         }
+
 
 
         /*
@@ -1624,12 +1636,347 @@ class RouteController extends Controller
         ]);
     }
 
-    public function overview(){
-        $targets = TripRoute::all(); 
-        $employeeTypes = EmployeeType::all();
-        return view('sales.tracking.overview', compact('targets','employeeTypes'));
+    public function trackingDetails(Request $request)
+    {
+        $request->validate([
+            'type'          => 'required|in:lead,influencer,dealer,order,activity,commitment',
+            'district_id'   => 'nullable',
+            'designation_id'=> 'nullable',
+            'employee_id'   => 'nullable',
+            'date'          => 'required|date',
+        ]);
 
+        $type = $request->type;
+        $date = $request->date;
+
+        $startDate = Carbon::parse($date)->startOfDay();
+        $endDate   = Carbon::parse($date)->endOfDay();
+
+        $employeeId = $request->employee_id;
+        $districtId = $request->district_id;
+
+        $data = collect();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Leads
+        |--------------------------------------------------------------------------
+        */
+
+        if ($type === 'lead') {
+
+            $data = Lead::with("customerType")
+
+                ->whereBetween(
+                    'created_at',
+                    [$startDate, $endDate]
+                )
+
+                ->when($employeeId, function ($query) use ($employeeId) {
+
+                    $query->where(
+                        'created_by',
+                        $employeeId
+                    );
+
+                })
+
+                ->when($districtId, function ($query) use ($districtId) {
+
+                    $query->where(
+                        'district_id',
+                        $districtId
+                    );
+
+                })
+
+                ->orderBy('created_at')
+
+                ->get()
+
+                ->map(function ($lead) {
+
+                    return [
+                        'customer_name' => $lead->customer_name ?? '-',
+                        'time' => $lead->created_at
+                        ? Carbon::parse($lead->created_at)
+                        ->format('h:i A')
+                        : '-',
+                        'customer_type' => $lead->customerType->name ?? '-',
+                        // 'location' => trim(
+                        //     ($lead->latitude ?? '') .
+                        //     ', ' .
+                        //     ($lead->longitude ?? ''),
+                        
+                        //)
+                    ];
+
+                });
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Influencer
+        |--------------------------------------------------------------------------
+        */
+
+        elseif ($type === 'influencer') {
+
+            $data = InfluencerVisit::query()
+
+                ->whereBetween(
+                    'created_at',
+                    [$startDate, $endDate]
+                )
+
+                ->when($employeeId, function ($query) use ($employeeId) {
+
+                    $query->where(
+                        'created_by',
+                        $employeeId
+                    );
+
+                })
+
+                ->orderBy('created_at')
+
+                ->get()
+
+                ->map(function ($visit) {
+
+                    return [
+                        'influencer_name' =>
+                            $visit->influencer_name ?? '-',
+
+                        'time' => $visit->created_at
+                            ? Carbon::parse($visit->created_at)
+                                ->format('h:i A')
+                            : '-',
+
+                        // 'location' => trim(
+                        //     ($visit->latitude ?? '') .
+                        //     ', ' .
+                        //     ($visit->longitude ?? '')
+                        // )
+                    ];
+
+                });
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Dealer
+        |--------------------------------------------------------------------------
+        */
+
+        elseif ($type === 'dealer') {
+
+            $data = DealerVisit::with('dealer')
+
+                ->whereBetween(
+                    'created_at',
+                    [$startDate, $endDate]
+                )
+
+                ->when($employeeId, function ($query) use ($employeeId) {
+
+                    $query->where(
+                        'created_by',
+                        $employeeId
+                    );
+
+                })
+
+                ->orderBy('created_at')
+
+                ->get()
+
+                ->map(function ($visit) {
+
+                    return [
+                        'dealer_name' =>
+                            $visit->dealer->dealer_name ?? '-',
+
+                        'time' => $visit->created_at
+                            ? Carbon::parse($visit->created_at)
+                                ->format('h:i A')
+                            : '-',
+
+                        
+                    ];
+
+                });
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Orders
+        |--------------------------------------------------------------------------
+        */
+
+        elseif ($type === 'order') {
+
+            $data = Order::with('dealer')
+
+                ->whereBetween(
+                    'created_at',
+                    [$startDate, $endDate]
+                )
+
+                ->when($employeeId, function ($query) use ($employeeId) {
+
+                    $query->where(
+                        'created_by',
+                        $employeeId
+                    );
+
+                })
+
+                ->orderBy('created_at')
+
+                ->get()
+
+                ->map(function ($order) {
+
+                    return [
+                        'dealer_name' =>
+                            $order->dealer->dealer_name ?? '-',
+
+                        'order_number' =>
+                           'OD00' .$order->id ?? '-',
+                        'time' => $order->created_at
+                            ? Carbon::parse($order->created_at)
+                                ->format('h:i A')
+                            : '-',
+                    ];
+
+                });
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Activities
+        |--------------------------------------------------------------------------
+        */
+
+        elseif ($type === 'activity') {
+
+            $data = Activity::with('activityType','dealer')
+
+                ->whereBetween(
+                    'assigned_date',
+                    [$startDate, $endDate]
+                )
+
+                ->when($employeeId, function ($query) use ($employeeId) {
+
+                    $query->where(
+                        'employee_id',
+                        $employeeId
+                    );
+
+                })
+
+                ->orderBy('assigned_date')
+
+                ->get()
+
+                ->map(function ($activity) {
+
+                    return [
+                        'activity_name' =>
+                            $activity->activityType->name ?? 'Activity',
+
+                        'time' => $activity->assigned_date
+                            ? Carbon::parse($activity->assigned_date)
+                                ->format('h:i A')
+                            : '-',
+
+                        'dealer' =>  $activity->dealer->dealer_name ?? 'NA',
+                    ];
+
+                });
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Commitments
+        |--------------------------------------------------------------------------
+        */
+
+        elseif ($type === 'commitment') {
+
+            $data = OutstandingPaymentCommitment::with("outstandingPayment.dealer")
+
+                ->whereBetween(
+                    'committed_date',
+                    [$startDate, $endDate]
+                )
+
+                ->when($employeeId, function ($query) use ($employeeId) {
+
+                    $query->where(
+                        'employee_id',
+                        $employeeId
+                    );
+
+                })
+
+                ->orderBy('committed_date')
+
+                ->get()
+
+                ->map(function ($commitment) {
+
+                    return [
+                        'comment' =>
+                            $commitment->comment ?? '-',
+                        'dealer' =>
+                            $commitment->outstandingPayment->dealer->dealer_name ?? '-',
+
+                        // 'committed_date' =>
+                        //     $commitment->committed_date
+                        //         ? Carbon::parse(
+                        //             $commitment->committed_date
+                        //         )->format('d-m-Y')
+                        //         : '-',
+
+                        'time' => $commitment->committed_date
+                            ? Carbon::parse(
+                                $commitment->committed_date
+                            )->format('d-m-Y')
+                            : '-',
+                    ];
+
+                });
+
+        }
+
+
+        return response()->json([
+            'success' => true,
+            'data' => $data->values(),
+        ]);
     }
+
+    public function overview(){
+        $districts = District::where("status","1")->orderBy("name","asc")->get(); 
+        $designations = EmployeeType::orderBy("type_name","asc")->get();
+        $customertype = CustomerType::select("id","name")->orderBy("name","asc")->get(); 
+        return view('sales.tracking.overview', compact('districts','designations','customertype'));
+    }
+
     public function overviewDetils(){
 
     }

@@ -50,6 +50,18 @@ MODIFY COLUMN no_ace_attached VARCHAR(256) NOT NULL;
             ADD COLUMN latitude DECIMAL(10,8) NULL AFTER `created_by`,
             ADD COLUMN longitude DECIMAL(11,8) NULL AFTER latitude;
         Removals (-)
+6.  outstanding_payment_commitments
+        Adds (+)            
+            ALTER TABLE outstanding_payment_commitments
+            ADD COLUMN latitude DECIMAL(10,8) NULL AFTER `created_at`,
+            ADD COLUMN longitude DECIMAL(11,8) NULL AFTER latitude;
+        Removals (-)
+7.  attendance
+        Adds (+)            
+            ALTER TABLE attendance
+            ADD COLUMN latitude_out DECIMAL(10,8) NULL AFTER `longitude`,
+            ADD COLUMN longitude_out DECIMAL(11,8) NULL AFTER latitude;
+        Removals (-)
 
 ALTER TABLE `dealer_visits`
 ADD COLUMN `product` VARCHAR(255) NULL,

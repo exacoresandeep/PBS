@@ -8,7 +8,9 @@
         min-height: calc(100vh - 70px);
         padding: 20px;
     }
-
+    .leaflet-bottom.leaflet-right {
+        display: none !important;
+    }
     .route-title {
         font-size: 18px;
         font-weight: 600;
@@ -183,6 +185,13 @@
 
     .punch-out {
         color: #ed5151;
+    }
+    .marker-punch-in {
+        background: #36b36b;
+    }
+
+    .marker-punch-out {
+        background: #ed5151;
     }
 
     .working-hours {
@@ -398,6 +407,13 @@
     .marker-commitment {
         background: #6655d9;
     }
+    .marker-punch-in {
+        background: #25d86f;
+    }
+
+    .marker-punch-out {
+        background: #ed5151;
+    }
 
     /* Scrollbar */
     .timeline-scroll::-webkit-scrollbar {
@@ -546,39 +562,28 @@
 
         {{-- Leads --}}
         <div class="col-6 col-md-4 col-lg">
-
-            <div class="summary-card summary-leads">
-
+            <div class="summary-card summary-leads"  data-type="lead" style="cursor:pointer;">
                 <div class="summary-icon">
-
                     <i class="fa fa-users"></i>
-
                 </div>
-
                 <div>
-
                     <div class="summary-label">
                         Leads
                     </div>
-
                     <div class="summary-count"
                         id="leadCount">
-
                         5
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
 
 
         {{-- Influencer Visit --}}
         <div class="col-6 col-md-4 col-lg">
 
-            <div class="summary-card summary-influencer">
+            <div class="summary-card summary-influencer" data-type="influencer"
+             style="cursor:pointer;">
 
                 <div class="summary-icon">
 
@@ -609,7 +614,8 @@
         {{-- Dealer Visit --}}
         <div class="col-6 col-md-4 col-lg">
 
-            <div class="summary-card summary-dealer">
+            <div class="summary-card summary-dealer" data-type="dealer"
+             style="cursor:pointer;">
 
                 <div class="summary-icon">
 
@@ -640,7 +646,8 @@
         {{-- Orders --}}
         <div class="col-6 col-md-4 col-lg">
 
-            <div class="summary-card summary-orders">
+            <div class="summary-card summary-orders" data-type="order"
+             style="cursor:pointer;">
 
                 <div class="summary-icon">
 
@@ -671,7 +678,8 @@
         {{-- Activities --}}
         <div class="col-6 col-md-4 col-lg">
 
-            <div class="summary-card summary-activities">
+            <div class="summary-card summary-activities" data-type="activity"
+             style="cursor:pointer;">
 
                 <div class="summary-icon">
 
@@ -702,7 +710,8 @@
         {{-- commitments --}}
         <div class="col-6 col-md-4 col-lg">
 
-            <div class="summary-card summary-commitments">
+            <div class="summary-card summary-commitments" data-type="commitment"
+             style="cursor:pointer;">
 
                 <div class="summary-icon">
 
@@ -928,7 +937,49 @@
         
     </div>
 </div>
+<div class="modal fade"
+     id="routeSummaryModal"
+     tabindex="-1"
+     aria-labelledby="routeSummaryModalLabel"
+     aria-hidden="true">
 
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title"
+                    id="routeSummaryModalLabel">
+                    Details
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div id="routeSummaryModalContent">
+
+                    <div class="text-center py-4">
+                        Loading...
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 {{-- Leaflet CSS --}}
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -937,9 +988,287 @@
 {{-- Leaflet JS --}}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         crossorigin=""></script>
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css">
 
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 <script>
 $(document).ready(function () {
+    function renderSummaryModal(type, data) {
+
+    let container =
+        $('#routeSummaryModalContent');
+
+    if (!Array.isArray(data) || data.length === 0) {
+
+        container.html(`
+            <div class="text-center text-muted py-4">
+                No records found for the selected date.
+            </div>
+        `);
+
+        return;
+    }
+
+
+    let html = `
+        <div class="table-responsive">
+
+            <table class="table table-sm table-bordered table-hover">
+
+                <thead>
+                    <tr>
+    `;
+
+
+    if (type === 'lead') {
+
+        html += `
+            <th>#</th>
+            <th>Time</th>
+            <th>Customer</th>
+            <th>Customer Type</th>
+        `;
+
+    }
+
+    else if (type === 'influencer') {
+
+        html += `
+            <th>#</th>
+            <th>Time</th>
+            <th>Influencer Name </th>
+        `;
+
+    }        
+
+    else if (type === 'dealer') {
+
+        html += `
+            <th>#</th>
+            <th>Time</th>
+            <th>Dealer</th>
+        `;
+
+    }
+
+    else if (type === 'order') {
+
+        html += `
+            <th>#</th>
+            <th>Time</th>
+            <th>Dealer</th>
+            <th>Order ID</th>
+        `;
+
+    }
+
+    else if (type === 'activity') {
+
+        html += `
+            <th>#</th>
+            <th>Time</th>
+            <th>Dealer</th>
+            <th>Activity</th>
+        `;
+
+    }
+
+    else if (type === 'commitment') {
+
+        html += `
+            <th>#</th>
+            <th>Committed Date</th>
+            <th>Dealer</th>
+        `;
+
+    }
+
+
+    html += `
+                    </tr>
+                </thead>
+
+                <tbody>
+    `;
+
+
+    data.forEach(function (item, index) {
+
+        html += `<tr>`;
+
+        html += `
+            <td>${index + 1}</td>
+        `;
+
+
+        if (type === 'lead') {
+
+            html += `
+                <td>${item.time ?? '-'}</td>
+                <td>${item.customer_name ?? '-'}</td>
+                <td>${item.customer_type ?? '-'}</td>
+            `;
+
+        }
+
+        else if (type === 'influencer') {
+
+            html += `
+            <td>${item.time ?? '-'}</td>
+            <td>${item.influencer_name ?? '-'}</td>
+            `;
+
+        }
+
+        else if (type === 'dealer') {
+
+            html += `
+                <td>${item.time ?? '-'}</td>
+                <td>${item.dealer_name ?? '-'}</td>
+            `;
+
+        }
+
+        else if (type === 'order') {
+
+            html += `
+                <td>${item.time ?? '-'}</td>
+                <td>${item.dealer_name ?? '-'}</td>
+                <td>${item.order_number ?? '-'}</td>
+            `;
+
+        }
+
+        else if (type === 'activity') {
+
+            html += `
+                <td>${item.time ?? '-'}</td>
+                <td>${item.dealer ?? '-'}</td>
+                <td>${item.activity_name ?? '-'}</td>
+            `;
+
+        }
+
+        else if (type === 'commitment') {
+
+            html += `
+            <td>${item.time ?? '-'}</td>
+                <td>${item.dealer ?? '-'}</td>
+            `;
+
+        }
+
+
+        html += `</tr>`;
+
+    });
+
+
+    html += `
+                </tbody>
+
+            </table>
+
+        </div>
+    `;
+
+
+    container.html(html);
+}
+    $(document).on('click', '.summary-card', function () {
+
+        let type = $(this).data('type');
+
+        let titles = {
+            lead: 'Lead Details',
+            influencer: 'Influencer Visit Details',
+            dealer: 'Dealer Visit Details',
+            order: 'Order Details',
+            activity: 'Activity Details',
+            commitment: 'Commitment Details'
+        };
+
+        let title = titles[type] || 'Details';
+
+        $('#routeSummaryModalLabel').text(title);
+
+        $('#routeSummaryModalContent').html(`
+            <div class="text-center py-4">
+                <i class="fa fa-spinner fa-spin"></i>
+                Loading...
+            </div>
+        `);
+
+
+        // Get current filters
+        let district =
+            $('#route_district').val();
+
+        let designation =
+            $('#route_designation').val();
+
+        let employee =
+            $('#route_employee').val();
+
+        let date =
+            $('#route_date').val();
+
+
+        // Open modal
+        $('#routeSummaryModal').modal('show');
+
+
+        $.ajax({
+
+            url: "{{ url('/tracking/trackingDetails') }}",
+
+            type: "GET",
+
+            data: {
+                type: type,
+                district_id: district,
+                designation_id: designation,
+                employee_id: employee,
+                date: date
+            },
+
+            success: function (response) {
+
+                if (!response.success) {
+
+                    $('#routeSummaryModalContent').html(`
+                        <div class="alert alert-warning">
+                            No details found.
+                        </div>
+                    `);
+
+                    return;
+                }
+
+                renderSummaryModal(
+                    type,
+                    response.data || []
+                );
+            },
+
+            error: function (xhr) {
+
+                console.error(
+                    'Summary Details Error:',
+                    xhr.responseText
+                );
+
+                $('#routeSummaryModalContent').html(`
+                    <div class="alert alert-danger">
+                        Unable to load details.
+                    </div>
+                `);
+            }
+
+        });
+
+    });
     function renderTimeline(timelineData) {
 
         let timeline = $('#routeTimeline');
@@ -1020,19 +1349,19 @@ $(document).ready(function () {
     $(".resultcard").addClass("d-none");
 
     let routeMarkers = [];
-    let routePolyline = null;
+    let routeRoutingControl = null;
     let routeMap = null;
 
     routeMap = L.map('routeMap', {
         zoomControl: true
-    }).setView([10.5276, 76.2144], 11);
+    }).setView([10.5276, 76.2144], 20);
 
 
     L.tileLayer(
         'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         {
             maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
+           // attribution: '&copy; OpenStreetMap contributors'
         }
     ).addTo(routeMap);
 
@@ -1139,34 +1468,116 @@ $(document).ready(function () {
 
     function clearRouteMap() {
 
+         // Remove markers
         routeMarkers.forEach(function (marker) {
+
             if (routeMap.hasLayer(marker)) {
                 routeMap.removeLayer(marker);
             }
+
         });
 
         routeMarkers = [];
 
-        if (routePolyline) {
-            if (routeMap.hasLayer(routePolyline)) {
-                routeMap.removeLayer(routePolyline);
+
+        // Remove road route
+        if (routeRoutingControl) {
+
+            try {
+                routeMap.removeControl(routeRoutingControl);
+            } catch (e) {
+                console.log('Routing control already removed');
             }
-            routePolyline = null;
+
+            routeRoutingControl = null;
         }
+    }
+
+    function drawRoadRoute(coordinates) {
+
+        // Remove previous route
+        if (routeRoutingControl) {
+
+            try {
+                routeMap.removeControl(routeRoutingControl);
+            } catch (e) {}
+
+            routeRoutingControl = null;
+        }
+
+
+        // Need at least 2 points
+        if (!Array.isArray(coordinates) || coordinates.length < 2) {
+            return;
+        }
+
+
+        // Convert coordinates to Leaflet LatLng
+        let waypoints = coordinates.map(function (point) {
+
+            return L.latLng(
+                parseFloat(point[0]),
+                parseFloat(point[1])
+            );
+
+        });
+
+
+        routeRoutingControl = L.Routing.control({
+
+            waypoints: waypoints,
+
+            router: L.Routing.osrmv1({
+                serviceUrl: 'https://router.project-osrm.org/route/v1'
+            }),
+
+            // Do not create additional markers
+            createMarker: function () {
+                return null;
+            },
+
+            // Do not allow user to modify route
+            addWaypoints: false,
+
+            draggableWaypoints: false,
+
+            // Do not show routing panel
+            show: false,
+
+            // Keep your existing map position
+            fitSelectedRoutes: false,
+
+            lineOptions: {
+                styles: [
+                    {
+                        color: '#2874d8',
+                        opacity: 0.85,
+                        weight: 4
+                    }
+                ]
+            }
+
+        }).addTo(routeMap);
     }
 
     function createMarkerIcon(type) {
         let className = 'marker-lead';
         let icon = 'fa-users';
         switch (type) {
-            case 'lead':
-
-                className = 'marker-lead';
-                icon = 'fa-users';
-
+             case 'punch_in':
+                className = 'marker-punch-in';
+                icon = 'fa-sign-in';
                 break;
 
-
+            case 'punch_out':
+                className = 'marker-punch-out';
+                icon = 'fa-sign-out';
+                break;
+                
+            case 'lead':
+                className = 'marker-lead';
+                icon = 'fa-users';
+                break;
             case 'influencer':
                 className = 'marker-influencer';
                 icon = 'fa-users';
@@ -1185,7 +1596,7 @@ $(document).ready(function () {
                 break;
             case 'commitment':
                 className = 'marker-commitment';
-                icon = 'fa-handshake';
+                icon = 'fa-handshake-o';
                 break;
             default:
                 className = 'marker-lead';
@@ -1298,53 +1709,155 @@ $(document).ready(function () {
                     response.timeline || []
                 );
 
-                let routeData =
-                    response.routes || [];
+                let routeData = Array.isArray(response.routes)
+                    ? response.routes
+                    : [];
+
+
+                // -------------------------------------------------
+                // Create complete route list
+                // Punch In -> Activities -> Punch Out
+                // -------------------------------------------------
+
+                let completeRouteData = [];
+
+
+                // -------------------------------------------------
+                // 1. PUNCH IN
+                // -------------------------------------------------
 
                 if (
-                    !Array.isArray(routeData) ||
-                    routeData.length === 0
+                    response.punch_in &&
+                    response.punch_in.lat &&
+                    response.punch_in.lng
                 ) {
+
+                    completeRouteData.push({
+
+                        type: 'punch_in',
+
+                        lat: response.punch_in.lat,
+
+                        lng: response.punch_in.lng,
+
+                        title: 'Punch In',
+
+                        description:
+                            'Punch In: ' +
+                            (response.punch_in.time || ''),
+
+                        time:
+                            response.punch_in.time || ''
+
+                    });
+
+                }
+
+
+                // -------------------------------------------------
+                // 2. NORMAL ACTIVITIES
+                // -------------------------------------------------
+
+                routeData.forEach(function (item) {
+
+                    completeRouteData.push(item);
+
+                });
+
+
+                // -------------------------------------------------
+                // 3. PUNCH OUT
+                // -------------------------------------------------
+
+                if (
+                    response.punch_out &&
+                    response.punch_out.lat &&
+                    response.punch_out.lng
+                ) {
+
+                    completeRouteData.push({
+
+                        type: 'punch_out',
+
+                        lat: response.punch_out.lat,
+
+                        lng: response.punch_out.lng,
+
+                        title: 'Punch Out',
+
+                        description:
+                            'Punch Out: ' +
+                            (response.punch_out.time || ''),
+
+                        time:
+                            response.punch_out.time || ''
+
+                    });
+
+                }
+
+
+                // -------------------------------------------------
+                // CREATE MARKERS + COORDINATES
+                // -------------------------------------------------
+
+                if (completeRouteData.length === 0) {
+
                     console.log(
                         'No route data found for:',
                         date
                     );
+
                     return;
                 }
+
+
                 let routeCoordinates = [];
 
-                routeData.forEach(function (item) {
-                    let lat =
-                        parseFloat(item.lat);
 
-                    let lng =
-                        parseFloat(item.lng);
+                completeRouteData.forEach(function (item) {
+
+                    let lat = parseFloat(item.lat);
+
+                    let lng = parseFloat(item.lng);
+
 
                     if (isNaN(lat) || isNaN(lng)) {
                         return;
                     }
+
+
                     if (lat === 0 || lng === 0) {
                         return;
                     }
+
+
+                    // Add coordinate in route order
                     routeCoordinates.push([
                         lat,
                         lng
                     ]);
 
-                    let marker =
-                        L.marker(
-                            [lat, lng],
-                            {
-                                icon: createMarkerIcon(item.type)
-                            }
-                        );
+
+                    // Create marker
+                    let marker = L.marker(
+                        [lat, lng],
+                        {
+                            icon: createMarkerIcon(item.type)
+                        }
+                    );
+
 
                     marker.routeType = item.type;
 
+
                     marker.addTo(routeMap);
 
+
                     marker.bindPopup(`
+
                         <div class="route-popup">
+
                             <div class="route-popup-title">
                                 ${item.title ?? ''}
                             </div>
@@ -1352,42 +1865,49 @@ $(document).ready(function () {
                             <div class="route-popup-text">
                                 ${item.description ?? ''}
                             </div>
+
                         </div>
+
                     `);
 
+
                     routeMarkers.push(marker);
+
                 });
 
-                if (routeCoordinates.length === 0) {
-                    console.log(
-                        'Route data exists but no valid coordinates found.'
-                    );
-                    return;
-                }
+
+                // -------------------------------------------------
+                // DRAW ROAD ROUTE
+                // -------------------------------------------------
 
                 if (routeCoordinates.length > 1) {
-                    routePolyline =
-                        L.polyline(
-                            routeCoordinates,
-                            {
-                                color: '#2874d8',
-                                weight: 4,
-                                opacity: 0.8
-                            }
-                        )
-                        .addTo(routeMap);
+
+                    drawRoadRoute(routeCoordinates);
+
                 }
 
-                routeMap.fitBounds(
-                    routeCoordinates,
-                    {
-                        padding: [30, 30]
-                    }
-                );
+
+                // -------------------------------------------------
+                // FIT MAP
+                // -------------------------------------------------
+
+                if (routeCoordinates.length > 0) {
+
+                    routeMap.fitBounds(
+                        routeCoordinates,
+                        {
+                            padding: [30, 30]
+                        }
+                    );
+
+                }
+
 
                 setTimeout(function () {
+
                     routeMap.invalidateSize();
-                }, 200);
+
+                }, 500);
             },
 
             error: function (xhr) {
@@ -1490,7 +2010,9 @@ $(document).ready(function () {
 
             if (
                 selected === 'all' ||
-                selected === markerType
+                selected === markerType ||
+                markerType === 'punch_in' ||
+                markerType === 'punch_out'
             ) {
 
                 if (!routeMap.hasLayer(marker)) {
@@ -1530,30 +2052,21 @@ $(document).ready(function () {
         });
 
 
-        // Remove existing polyline
-        if (routePolyline) {
-
-            if (routeMap.hasLayer(routePolyline)) {
-                routeMap.removeLayer(routePolyline);
-            }
-
-            routePolyline = null;
-        }
-
-
-        // Draw filtered route
+        // Draw actual road route for filtered points
         if (visibleCoordinates.length > 1) {
 
-            routePolyline =
-                L.polyline(
-                    visibleCoordinates,
-                    {
-                        color: '#2874d8',
-                        weight: 4,
-                        opacity: 0.8
-                    }
-                )
-                .addTo(routeMap);
+            drawRoadRoute(visibleCoordinates);
+
+        } else {
+
+            if (routeRoutingControl) {
+
+                try {
+                    routeMap.removeControl(routeRoutingControl);
+                } catch (e) {}
+
+                routeRoutingControl = null;
+            }
 
         }
 
