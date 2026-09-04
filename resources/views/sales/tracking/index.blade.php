@@ -1944,32 +1944,7 @@ $(document).ready(function () {
     });
 
    
-    function applyTimelineFilterold() {
-
-        let selected =
-            $('#timelineActivityFilter').val();
-
-        $('#routeTimeline .timeline-item').each(function () {
-
-            let type =
-                $(this).data('type');
-
-            if (
-                selected === 'all' ||
-                selected === type
-            ) {
-
-                $(this).show();
-
-            } else {
-
-                $(this).hide();
-
-            }
-
-        });
-
-    }
+   
 
     function applyTimelineFilter() {
 
