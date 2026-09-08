@@ -109,7 +109,9 @@ public function headings(): array
             'Lost Volume',
             'Lost To Competitor',
 	    'Reason For Lost',
-	    'Created By'
+	    'Created By',
+	    'Updated Date',
+            'Updated Time',
         ];
     }
 
@@ -184,6 +186,8 @@ public function headings(): array
             $visit->status === 'Lost' ? $visit->lost_to_competitor : '',
 	    $visit->status === 'Lost' ? $visit->reason_for_lost : '',
 	    optional($visit->createdBy)->name ?? '',
+        optional($visit->updated_at)->format('Y-m-d'),
+            optional($visit->updated_at)->format('H:i:s'),
 	   // $visit->id
         ];
     }

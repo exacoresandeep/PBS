@@ -872,6 +872,18 @@
                         </div>
 
                     </div>
+                    <div class="attendance-item">
+
+                        <div class="attendance-label">
+                            Total Km 
+                        </div>
+
+                        <div class="attendance-value travelled-km">
+                            100 Km
+                        </div>
+
+                    </div>
+
 
                 </div>
                 <div class="no-attendance d-none">
@@ -1645,6 +1657,9 @@ $(document).ready(function () {
         );
         $('.working-hours').text(
             counts.total_active_hours ?? 0
+        );
+        $('.travelled-km').text(
+            counts.travelled_km ?? 0
         );
         if(counts.punch_in == ""){
             $(".no-attendance").removeClass("d-none");

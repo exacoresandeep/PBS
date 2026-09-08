@@ -427,6 +427,51 @@
             height: 350px;
         }
     }
+    .custom-map-marker {
+        background: transparent;
+        border: none;
+    }
+
+    .activity-marker {
+        width: 40px;
+        height: 40px;
+        border-radius: 50% 50% 50% 0;
+        background: #2563eb;
+        border: 3px solid #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.30);
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        color: #ffffff;
+
+        font-size: 16px;
+
+        transform: rotate(-45deg);
+    }
+
+    .activity-marker i {
+        transform: rotate(45deg);
+    }
+
+
+    /* Popup */
+
+    .route-popup {
+        min-width: 180px;
+    }
+
+    .popup-title {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .popup-location {
+        font-size: 12px;
+        margin-top: 4px;
+    }
 </style>
 
 
@@ -522,11 +567,11 @@
                 Duration
             </label>
             <select name="duration" class="form-select route-filter">
-                <option value="Today">Today</option>
-                <option value="Yesterday">Yesterday</option>
-                <option value="This Week">This Week</option>
-                <option value="This Month">This Month</option>
-                <option value="3 Month">3 Month</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="3_month">3 Month</option>
             </select>
         </div>
     </div>
@@ -553,37 +598,542 @@
         
     </div>
 </div>
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
 
-
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
 <script>
 $(document).ready(function () {
-    
-    $(".resultcard").addClass("d-none");
 
- 
-    $('.route-filter').on('change', function () {
-        filterEmployees();
-    });
-    $('#route_date').on('change', function () {
-        let date =
-            $(this).val();
-        if (!date) {
-            hideResult();
+    let routeMap = null;
+    let routeMarkers = [];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Initialize Map
+    |--------------------------------------------------------------------------
+    */
+
+    function initializeMap() {
+
+        if (routeMap !== null) {
             return;
         }
-        if ($('#route_date').val() && $('#route_employee').val()) {
-            loadRouteTracking();
-        }
-    });
 
-    $('#route_employee').on('change', function () {
-        if ($('#route_date').val() && $('#route_employee').val()) {
-            loadRouteTracking();
-        }
-    });
+        routeMap = L.map('routeMap').setView(
+            [10.8505, 76.2711],
+            8
+        );
 
+        L.tileLayer(
+            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }
+        ).addTo(routeMap);
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Clear Existing Markers
+    |--------------------------------------------------------------------------
+    */
+
+    function clearMap() {
+
+        if (!routeMap) {
+            return;
+        }
+
+        routeMarkers.forEach(function (marker) {
+            routeMap.removeLayer(marker);
+        });
+
+        routeMarkers = [];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get Marker Icon
+    |--------------------------------------------------------------------------
+    */
+
+    function getMarkerIcon(type) {
+
+        type = (type || '').toLowerCase();
+
+        let markerClass = 'marker-activity';
+        let icon = 'fa-map-marker';
+
+
+        if (type.includes('lead')) {
+
+            markerClass = 'marker-lead';
+            icon = 'fa-user';
+
+        } else if (type.includes('influencer')) {
+
+            markerClass = 'marker-influencer';
+            icon = 'fa-users';
+
+        } else if (type.includes('dealer')) {
+
+            markerClass = 'marker-dealer';
+            icon = 'fa-building';
+
+        } else if (type.includes('order')) {
+
+            markerClass = 'marker-order';
+            icon = 'fa-shopping-cart';
+
+        } else if (type.includes('commitment')) {
+
+            markerClass = 'marker-commitment';
+            icon = 'fa-handshake-o';
+
+        } else {
+
+            markerClass = 'marker-activity';
+            icon = 'fa-map-marker';
+        }
+
+
+        return L.divIcon({
+
+            className: '',
+
+            html: `
+                <div class="route-marker ${markerClass}">
+                    <i class="fa ${icon}"></i>
+                </div>
+            `,
+
+            iconSize: [25, 25],
+
+            iconAnchor: [12, 25],
+
+            popupAnchor: [0, -25]
+        });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Display Points On Map
+    |--------------------------------------------------------------------------
+    */
+
+    function displayActivities(points) {
+
+        console.log('Displaying points:', points);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clear Previous Markers
+        |--------------------------------------------------------------------------
+        */
+
+        clearMap();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | No Data
+        |--------------------------------------------------------------------------
+        */
+
+        if (!points || points.length === 0) {
+
+            console.log('No activity points found.');
+
+            routeMap.setView(
+                [10.8505, 76.2711],
+                8
+            );
+
+            return;
+        }
+
+
+        let bounds = [];
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Loop Through Points
+        |--------------------------------------------------------------------------
+        */
+
+        points.forEach(function (point, index) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | IMPORTANT:
+            | Backend returns lat and lng
+            |--------------------------------------------------------------------------
+            */
+
+            let lat = parseFloat(point.lat);
+            let lng = parseFloat(point.lng);
+
+            let activityType =
+                point.activity_type || 'Activity';
+
+
+            console.log(
+                'Point ' + index,
+                {
+                    lat: lat,
+                    lng: lng,
+                    activity_type: activityType
+                }
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Validate Coordinates
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                isNaN(lat) ||
+                isNaN(lng) ||
+                lat === 0 ||
+                lng === 0
+            ) {
+
+                console.warn(
+                    'Invalid coordinates:',
+                    point
+                );
+
+                return;
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Create Marker
+            |--------------------------------------------------------------------------
+            */
+
+            let marker = L.marker(
+                [lat, lng],
+                {
+                    icon: getMarkerIcon(
+                        activityType
+                    )
+                }
+            ).addTo(routeMap);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Popup
+            |--------------------------------------------------------------------------
+            */
+
+            let popupHtml = `
+                <div class="route-popup">
+
+                    <div class="route-popup-title">
+                        ${activityType}
+                    </div>
+
+                    <div class="route-popup-text">
+                        Latitude: ${lat.toFixed(6)}
+                    </div>
+
+                    <div class="route-popup-text">
+                        Longitude: ${lng.toFixed(6)}
+                    </div>
+
+                </div>
+            `;
+
+
+            marker.bindPopup(popupHtml);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Save Marker
+            |--------------------------------------------------------------------------
+            */
+
+            routeMarkers.push(marker);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Add To Bounds
+            |--------------------------------------------------------------------------
+            */
+
+            bounds.push([
+                lat,
+                lng
+            ]);
+        });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fit Map To All Points
+        |--------------------------------------------------------------------------
+        */
+
+        if (bounds.length > 1) {
+
+            routeMap.fitBounds(
+                bounds,
+                {
+                    padding: [40, 40]
+                }
+            );
+
+        } else if (bounds.length === 1) {
+
+            routeMap.setView(
+                bounds[0],
+                15
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fix Leaflet Rendering
+        |--------------------------------------------------------------------------
+        */
+
+        setTimeout(function () {
+
+            routeMap.invalidateSize();
+
+        }, 300);
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Load Data From Backend
+    |--------------------------------------------------------------------------
+    */
+
+    function loadRouteData() {
+
+        let districtId =
+            $('#route_district').val();
+
+        let designationId =
+            $('#route_designation').val();
+
+        let customerTypeId =
+            $('#route_customertype').val();
+
+        let duration =
+            $('select[name="duration"]').val();
+
+
+        console.log(
+            'Loading route data:',
+            {
+                district_id: districtId,
+                designation_id: designationId,
+                customertype_id: customerTypeId,
+                duration: duration
+            }
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Show Map
+        |--------------------------------------------------------------------------
+        */
+
+        $('.resultcard').removeClass('d-none');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Initialize Map
+        |--------------------------------------------------------------------------
+        */
+
+        initializeMap();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fix Map Size
+        |--------------------------------------------------------------------------
+        */
+
+        setTimeout(function () {
+
+            routeMap.invalidateSize();
+
+        }, 200);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | AJAX
+        |--------------------------------------------------------------------------
+        */
+
+        $.ajax({
+
+            url: "{{ route('tracking.overviewDetials') }}",
+
+            type: "POST",
+
+            dataType: "json",
+
+            data: {
+
+                district_id: districtId,
+
+                designation_id: designationId,
+
+                customertype_id: customerTypeId,
+
+                duration: duration,
+
+                _token: "{{ csrf_token() }}"
+            },
+
+
+            beforeSend: function () {
+
+                clearMap();
+            },
+
+
+            success: function (response) {
+
+                console.log(
+                    'Backend response:',
+                    response
+                );
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Check Success
+                |--------------------------------------------------------------------------
+                */
+
+                if (!response.success) {
+
+                    console.error(
+                        response.message ||
+                        'Unable to load map data.'
+                    );
+
+                    return;
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | IMPORTANT:
+                |
+                | Backend response:
+                |
+                | {
+                |     success: true,
+                |     points: [...]
+                | }
+                |
+                |--------------------------------------------------------------------------
+                */
+
+                let points =
+                    response.points || [];
+
+
+                console.log(
+                    'Total points:',
+                    points.length
+                );
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Display Points
+                |--------------------------------------------------------------------------
+                */
+
+                displayActivities(points);
+            },
+
+
+            error: function (xhr) {
+
+                console.error(
+                    'AJAX Error:',
+                    xhr
+                );
+
+                console.error(
+                    'Response:',
+                    xhr.responseText
+                );
+            },
+
+
+            complete: function () {
+
+                setTimeout(function () {
+
+                    if (routeMap !== null) {
+
+                        routeMap.invalidateSize();
+                    }
+
+                }, 300);
+            }
+
+        });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Load When Any Filter Changes
+    |--------------------------------------------------------------------------
+    */
+
+    $('.route-filter').on(
+        'change',
+        function () {
+
+            loadRouteData();
+        }
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Initialize Map
+    |--------------------------------------------------------------------------
+    */
+
+    initializeMap();
 
 });
-
 </script>
 @endsection

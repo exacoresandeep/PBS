@@ -317,5 +317,5 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
         Route::get('/route-tracking-data', [RouteController::class, 'trackingData'])->name('route-tracking-data');
         Route::get('/trackingDetails', [RouteController::class, 'trackingDetails'])->name('tracking.trackingDetails');
         Route::get('/overview', [RouteController::class, 'overview'])->name('tracking.overview');
-        Route::post('/overviewDetils', [RouteController::class, 'overviewDetils'])->name('tracking.overviewDetils');
+        Route::post('/overviewDetials', [RouteController::class, 'overviewDetials'])->name('tracking.overviewDetials');
     });

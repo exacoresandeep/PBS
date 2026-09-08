@@ -23,6 +23,7 @@ use App\Models\DealerRouteAssignment;
 use Carbon\Carbon;
 use App\Helpers\ProductHelper;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
@@ -1439,19 +1440,8 @@ class RouteController extends Controller
         }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Sort Route By Time
-        |--------------------------------------------------------------------------
-        */
-
-        usort($routes, function ($a, $b) {
-
-            return strtotime($a['time'] ?? '00:00:00')
-                <=> strtotime($b['time'] ?? '00:00:00');
-
-        });
-
+        
+        
         /*
         |--------------------------------------------------------------------------
         | ATTENDANCE
@@ -1524,8 +1514,19 @@ class RouteController extends Controller
             ];
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Sort Route By Time
+        |--------------------------------------------------------------------------
+        */
 
+        usort($routes, function ($a, $b) {
 
+            return strtotime($a['time'] ?? '00:00:00')
+                <=> strtotime($b['time'] ?? '00:00:00');
+
+        });
+        $travelledKm = $this->calculateTravelledKm($routes);
         /*
         |--------------------------------------------------------------------------
         | Sort Timeline
@@ -1538,7 +1539,7 @@ class RouteController extends Controller
                 <=> ($b['sort_time'] ?? 0);
 
         });
-
+        
 
         /*
         |--------------------------------------------------------------------------
@@ -1569,6 +1570,7 @@ class RouteController extends Controller
             'activities'         => 0,
             'comments'           => 0,
             'commitments'        => 0,
+            'travelled_km'        => $travelledKm ?? 0,
             'punch_in'           => $Attendance->punch_in ?? "",
             'punch_out'          => $Attendance->punch_out ?? "",
             'total_active_hours' => $Attendance->total_active_hours ?? "",
@@ -1634,6 +1636,242 @@ class RouteController extends Controller
             'timeline' => $timeline,
 
         ]);
+    }
+
+   private function calculateTravelledKm(array $routes)
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | 1. Keep only valid coordinates
+        |--------------------------------------------------------------------------
+        */
+
+        $locations = collect($routes)
+            ->filter(function ($route) {
+
+                return isset($route['lat'], $route['lng'])
+                    && is_numeric($route['lat'])
+                    && is_numeric($route['lng'])
+                    && (float) $route['lat'] != 0
+                    && (float) $route['lng'] != 0;
+            })
+            ->values();
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. Need at least 2 locations
+        |--------------------------------------------------------------------------
+        */
+
+        if ($locations->count() < 2) {
+
+            \Log::warning('Travelled KM: Not enough valid locations', [
+                'total_routes' => count($routes),
+                'valid_locations' => $locations->count(),
+                'routes' => $routes,
+            ]);
+
+            return 0;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3. Origin
+        |--------------------------------------------------------------------------
+        */
+
+        $first = $locations->first();
+
+        $origin = [
+            'location' => [
+                'latLng' => [
+                    'latitude'  => (float) $first['lat'],
+                    'longitude' => (float) $first['lng'],
+                ],
+            ],
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | 4. Destination
+        |--------------------------------------------------------------------------
+        */
+
+        $last = $locations->last();
+
+        $destination = [
+            'location' => [
+                'latLng' => [
+                    'latitude'  => (float) $last['lat'],
+                    'longitude' => (float) $last['lng'],
+                ],
+            ],
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | 5. Intermediate locations
+        |--------------------------------------------------------------------------
+        */
+
+        $intermediates = [];
+
+        if ($locations->count() > 2) {
+
+            foreach ($locations->slice(1, $locations->count() - 2) as $location) {
+
+                $intermediates[] = [
+                    'location' => [
+                        'latLng' => [
+                            'latitude'  => (float) $location['lat'],
+                            'longitude' => (float) $location['lng'],
+                        ],
+                    ],
+                ];
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 6. Log request before calling Google
+        |--------------------------------------------------------------------------
+        */
+
+        \Log::info('Google Routes API Request', [
+            'location_count' => $locations->count(),
+            'origin' => $origin,
+            'destination' => $destination,
+            'intermediates_count' => count($intermediates),
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | 7. Google Routes API
+        |--------------------------------------------------------------------------
+        */
+
+        $response = Http::timeout(30)
+            ->withHeaders([
+                'Content-Type' => 'application/json',
+                'X-Goog-Api-Key' => config('services.google_maps.key'),
+                'X-Goog-FieldMask' => 'routes.distanceMeters,routes.polyline.encodedPolyline',
+            ])
+            ->post(
+                'https://routes.googleapis.com/directions/v2:computeRoutes',
+                [
+                    'origin' => $origin,
+
+                    'destination' => $destination,
+
+                    'intermediates' => $intermediates,
+
+                    'travelMode' => 'DRIVE',
+
+                    'routingPreference' => 'TRAFFIC_UNAWARE',
+
+                    'optimizeWaypointOrder' => false,
+                ]
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | 8. Log COMPLETE Google response
+        |--------------------------------------------------------------------------
+        */
+
+        \Log::info('Google Routes API Response', [
+            'status' => $response->status(),
+            'successful' => $response->successful(),
+            'body' => $response->body(),
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | 9. HTTP error
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$response->successful()) {
+
+            \Log::error('Google Routes API HTTP Error', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return 0;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 10. Decode JSON
+        |--------------------------------------------------------------------------
+        */
+
+        $data = $response->json();
+
+        /*
+        |--------------------------------------------------------------------------
+        | 11. Check Google returned routes
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            !is_array($data) ||
+            !isset($data['routes']) ||
+            !is_array($data['routes']) ||
+            empty($data['routes'])
+        ) {
+
+            \Log::error('Google Routes API: No route returned', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'decoded_response' => $data,
+                'origin' => $origin,
+                'destination' => $destination,
+                'intermediates' => $intermediates,
+            ]);
+
+            return 0;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 12. Get distance
+        |--------------------------------------------------------------------------
+        */
+
+        $distanceMeters = $data['routes'][0]['distanceMeters'] ?? null;
+
+        if ($distanceMeters === null) {
+
+            \Log::error('Google Routes API: distanceMeters missing', [
+                'response' => $data,
+            ]);
+
+            return 0;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 13. Convert meters -> KM
+        |--------------------------------------------------------------------------
+        */
+
+        $distanceKm = $distanceMeters / 1000;
+
+        /*
+        |--------------------------------------------------------------------------
+        | 14. Final log
+        |--------------------------------------------------------------------------
+        */
+
+        \Log::info('Travelled KM Calculated', [
+            'distance_meters' => $distanceMeters,
+            'distance_km' => round($distanceKm, 2),
+            'location_count' => $locations->count(),
+        ]);
+
+        return round($distanceKm, 2);
     }
 
     public function trackingDetails(Request $request)
@@ -1977,8 +2215,412 @@ class RouteController extends Controller
         return view('sales.tracking.overview', compact('districts','designations','customertype'));
     }
 
-    public function overviewDetils(){
+    public function overviewDetials(Request $request)
+    {
+        $request->validate([
+            'district_id'     => 'nullable',
+            'designation_id'  => 'nullable',
+            'customertype_id' => 'nullable',
+            'duration'        => 'required|in:today,yesterday,this_week,this_month,3_month',
+        ]);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Get Filters
+        |--------------------------------------------------------------------------
+        */
+
+        $districtId     = $request->district_id;
+        $designationId  = $request->designation_id;
+        $customerTypeId = $request->customertype_id;
+        $duration       = $request->duration;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Calculate Date Range
+        |--------------------------------------------------------------------------
+        */
+
+        switch ($duration) {
+
+            case 'yesterday':
+
+                $fromDate = Carbon::yesterday()->startOfDay();
+                $toDate   = Carbon::yesterday()->endOfDay();
+
+                break;
+
+
+            case 'this_week':
+
+                $fromDate = Carbon::now()->startOfWeek();
+                $toDate   = Carbon::now()->endOfWeek();
+
+                break;
+
+
+            case 'this_month':
+
+                $fromDate = Carbon::now()->startOfMonth();
+                $toDate   = Carbon::now()->endOfMonth();
+
+                break;
+
+
+            case '3_month':
+
+                $fromDate = Carbon::now()
+                    ->subMonths(2)
+                    ->startOfMonth();
+
+                $toDate = Carbon::now()->endOfMonth();
+
+                break;
+
+
+            case 'today':
+
+            default:
+
+                $fromDate = Carbon::today()->startOfDay();
+                $toDate   = Carbon::today()->endOfDay();
+
+                break;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Points Collection
+        |--------------------------------------------------------------------------
+        */
+
+        $points = collect();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 1. LEADS
+        |--------------------------------------------------------------------------
+        */
+
+        $leadsQuery = Lead::query()
+            ->whereBetween('created_at', [
+                $fromDate,
+                $toDate
+            ]);
+
+
+        /*
+        * District filter
+        */
+        if (!empty($districtId)) {
+
+            $leadsQuery->where(
+                'district_id',
+                $districtId
+            );
+        }
+
+
+        /*
+        * Customer Type filter
+        *
+        * Remove this block if Lead table does not have
+        * customer_type_id column.
+        */
+        if (!empty($customerTypeId)) {
+
+            $leadsQuery->where(
+                'customer_type_id',
+                $customerTypeId
+            );
+        }
+
+
+        $leads = $leadsQuery->get();
+
+
+        foreach ($leads as $lead) {
+
+            if (
+                is_numeric($lead->latitude) &&
+                is_numeric($lead->longitude)
+            ) {
+
+                $points->push([
+                    'lat'           => (float) $lead->latitude,
+                    'lng'           => (float) $lead->longitude,
+                    'activity_type' => 'Lead',
+                ]);
+            }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. INFLUENCER VISITS
+        |--------------------------------------------------------------------------
+        */
+
+        $influencerQuery = InfluencerVisit::query()
+            ->whereBetween('created_at', [
+                $fromDate,
+                $toDate
+            ]);
+
+
+        /*
+        * Customer Type filter
+        *
+        * Remove if this column does not exist.
+        */
+        if (!empty($customerTypeId)) {
+
+            $influencerQuery->where(
+                'customer_type_id',
+                $customerTypeId
+            );
+        }
+
+
+        $influencerVisits = $influencerQuery->get();
+
+
+        foreach ($influencerVisits as $visit) {
+
+            if (
+                is_numeric($visit->latitude) &&
+                is_numeric($visit->longitude)
+            ) {
+
+                $points->push([
+                    'lat'           => (float) $visit->latitude,
+                    'lng'           => (float) $visit->longitude,
+                    'activity_type' => 'Influencer Visit',
+                ]);
+            }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3. DEALER VISITS
+        |--------------------------------------------------------------------------
+        */
+
+        $dealerVisitsQuery = DealerVisit::query()
+            ->whereBetween('created_at', [
+                $fromDate,
+                $toDate
+            ]);
+
+
+        /*
+        * Customer Type filter
+        *
+        * Keep this only if DealerVisit has customer_type_id.
+        */
+        if (!empty($customerTypeId)) {
+
+            $dealerVisitsQuery->where(
+                'customer_type_id',
+                $customerTypeId
+            );
+        }
+
+
+        $dealerVisits = $dealerVisitsQuery->get();
+
+
+        foreach ($dealerVisits as $visit) {
+
+            if (
+                is_numeric($visit->latitude) &&
+                is_numeric($visit->longitude)
+            ) {
+
+                $points->push([
+                    'lat'           => (float) $visit->latitude,
+                    'lng'           => (float) $visit->longitude,
+                    'activity_type' => 'Dealer Visit',
+                ]);
+            }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 4. ORDERS
+        |--------------------------------------------------------------------------
+        */
+
+        $ordersQuery = Order::query()
+            ->whereBetween('created_at', [
+                $fromDate,
+                $toDate
+            ]);
+
+
+        /*
+        * Customer Type filter
+        *
+        * Keep only if Order table has customer_type_id.
+        */
+        if (!empty($customerTypeId)) {
+
+            $ordersQuery->where(
+                'customer_type_id',
+                $customerTypeId
+            );
+        }
+
+
+        $orders = $ordersQuery->get();
+
+
+        foreach ($orders as $order) {
+
+            if (
+                is_numeric($order->latitude) &&
+                is_numeric($order->longitude)
+            ) {
+
+                $points->push([
+                    'lat'           => (float) $order->latitude,
+                    'lng'           => (float) $order->longitude,
+                    'activity_type' => 'Order',
+                ]);
+            }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 5. ACTIVITIES
+        |--------------------------------------------------------------------------
+        */
+
+        $activitiesQuery = Activity::query()
+            ->with('activityType')
+            ->whereBetween('updated_at', [
+                $fromDate,
+                $toDate
+            ]);
+
+
+        /*
+        * Designation filter
+        *
+        * Keep only if Activity table contains designation_id.
+        */
+        if (!empty($designationId)) {
+
+            $activitiesQuery->where(
+                'designation_id',
+                $designationId
+            );
+        }
+
+
+        $activities = $activitiesQuery->get();
+
+
+        foreach ($activities as $activity) {
+
+            if (
+                is_numeric($activity->latitude) &&
+                is_numeric($activity->longitude)
+            ) {
+
+                $activityType = optional(
+                    $activity->activityType
+                )->name;
+
+
+                $points->push([
+                    'lat'           => (float) $activity->latitude,
+                    'lng'           => (float) $activity->longitude,
+                    'activity_type' => $activityType ?: 'Activity',
+                ]);
+            }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | 6. PAYMENT COMMITMENTS
+        |--------------------------------------------------------------------------
+        */
+
+        $commitmentsQuery = OutstandingPaymentCommitment::query()
+            ->whereBetween('committed_date', [
+                $fromDate->toDateString(),
+                $toDate->toDateString()
+            ]);
+
+
+        /*
+        * If OutstandingPaymentCommitment has customer_type_id,
+        * this can be enabled.
+        */
+        if (!empty($customerTypeId)) {
+
+            $commitmentsQuery->where(
+                'customer_type_id',
+                $customerTypeId
+            );
+        }
+
+
+        $commitments = $commitmentsQuery->get();
+
+
+        foreach ($commitments as $commitment) {
+
+            if (
+                is_numeric($commitment->latitude) &&
+                is_numeric($commitment->longitude)
+            ) {
+
+                $points->push([
+                    'lat'           => (float) $commitment->latitude,
+                    'lng'           => (float) $commitment->longitude,
+                    'activity_type' => 'Payment Commitment',
+                ]);
+            }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Remove Invalid Coordinates
+        |--------------------------------------------------------------------------
+        */
+
+        $points = $points
+            ->filter(function ($point) {
+
+                return
+                    isset($point['lat']) &&
+                    isset($point['lng']) &&
+                    is_numeric($point['lat']) &&
+                    is_numeric($point['lng']);
+            })
+            ->values();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
+
+        return response()->json([
+            'success' => true,
+            'points'  => $points,
+        ]);
     }
 
 

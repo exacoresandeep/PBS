@@ -44,4 +44,7 @@ return [
         'api_url' => env('SAP_API_URL', 'http://192.168.0.3:8081')
     ],
 
+    'google_maps' => [
+        'key' => env('GOOGLE_MAPS_API_KEY'),
+    ],
 ];
