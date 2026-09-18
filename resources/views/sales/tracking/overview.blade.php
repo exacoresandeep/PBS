@@ -608,11 +608,11 @@
 </script>
 <script>
 $(document).ready(function () {
-
+    
     let routeMap = null;
     let routeMarkers = [];
 
-
+    loadRouteData();
     /*
     |--------------------------------------------------------------------------
     | Initialize Map
@@ -674,30 +674,35 @@ $(document).ready(function () {
         let icon = 'fa-map-marker';
 
 
-        if (type.includes('lead')) {
+        if (type.includes('Lead')) {
 
             markerClass = 'marker-lead';
             icon = 'fa-user';
 
-        } else if (type.includes('influencer')) {
+        } else if (type.includes('Influencer Visit')) {
 
             markerClass = 'marker-influencer';
             icon = 'fa-users';
 
-        } else if (type.includes('dealer')) {
+        } else if (type.includes('Dealer Visit')) {
 
             markerClass = 'marker-dealer';
             icon = 'fa-building';
 
-        } else if (type.includes('order')) {
+        } else if (type.includes('Order')) {
 
             markerClass = 'marker-order';
             icon = 'fa-shopping-cart';
 
-        } else if (type.includes('commitment')) {
+        } else if (type.includes('Payment Commitment')) {
 
             markerClass = 'marker-commitment';
             icon = 'fa-handshake-o';
+
+        } else if (type.includes('Activity')) {
+
+            markerClass = 'marker-activity';
+            icon = 'fa-tasks';
 
         } else {
 
@@ -784,6 +789,21 @@ $(document).ready(function () {
 
             let lat = parseFloat(point.lat);
             let lng = parseFloat(point.lng);
+            let name = point.name;
+            let date = point.date;
+            if (date) {
+                let d = new Date(date);
+
+                let day = d.getDate();
+                let month = d.getMonth() + 1;
+                let year = d.getFullYear();
+
+                let hours = String(d.getHours()).padStart(2, '0');
+                let minutes = String(d.getMinutes()).padStart(2, '0');
+                let seconds = String(d.getSeconds()).padStart(2, '0');
+
+                date = `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+            }
 
             let activityType =
                 point.activity_type || 'Activity';
@@ -848,6 +868,12 @@ $(document).ready(function () {
 
                     <div class="route-popup-title">
                         ${activityType}
+                    </div>
+                    <div class="route-popup-text">
+                        Name: ${name}
+                    </div>
+                    <div class="route-popup-text">
+                        Date: ${date}
                     </div>
 
                     <div class="route-popup-text">

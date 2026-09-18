@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\DealerController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\AccountsController;
+use App\Http\Controllers\SalesController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Logistics\LogisticsController;
@@ -77,8 +78,8 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
         });
 
         Route::prefix('targets')->group(function () {
-//            Route::get('/', [TargetController::class, 'index'])->name('sales.target.index');
-  Route::get('/employee', [TargetController::class, 'index'])->name('sales.target.index');
+            //            Route::get('/', [TargetController::class, 'index'])->name('sales.target.index');
+            Route::get('/employee', [TargetController::class, 'index'])->name('sales.target.index');
             Route::get('/dealer', [TargetController::class, 'dealer_index'])->name('sales.target.dealer_index');
             Route::post('/dealer/store', [TargetController::class, 'dealerTargetStore'])->name('sales.target.dealer.store');
             Route::post('/dealer/list', [TargetController::class, 'dealerTargetList'])->name('sales.target.dealer.list');
@@ -86,7 +87,7 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
             Route::post('/dealer/update', [TargetController::class, 'dealerTargetUpdate'])->name('sales.target.dealer.update');
             Route::get('/dealer/view/{id}', [TargetController::class, 'viewDealerTargets'])->name('sales.target.dealer.view');
   
-	    Route::post('/list', [TargetController::class, 'targetList'])->name('sales.target.list');
+	        Route::post('/list', [TargetController::class, 'targetList'])->name('sales.target.list');
             Route::post('/store', [TargetController::class, 'store'])->name('sales.target.store');
             Route::post('/update', [TargetController::class, 'update'])->name('sales.target.update');
             Route::get('/view/{id}', [TargetController::class, 'viewTargets'])->name('sales.target.view');
@@ -131,7 +132,10 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
             Route::get('/attendance-export', [AttendanceController::class, 'exportAttendance'])->name('attendance.export');
 
         });
-
+        Route::prefix('orders')->group(function () {
+            Route::get('/', [SalesController::class, 'index'])->name('sales.orders.index');
+            Route::get('/view/{id}', [SalesController::class, 'viewOrder'])->name('sales.orders.view');
+        });
         Route::get('/get-employees/{employeeTypeId}', [EmployeeController::class, 'getEmployeesByType'])->name('sales.getEmployees');
         Route::get('/employees-by-dealer/{dealer_id}', [ActivityController::class, 'getEmployeesByDealer']);
         Route::get('/dealers-by-district/{district_id}', [ActivityController::class, 'getDealersByDistrict']);

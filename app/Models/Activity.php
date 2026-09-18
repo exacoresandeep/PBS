@@ -22,7 +22,7 @@ class Activity extends Model
         'status',
     	'notification_status',
     	'remarks',
-	"created_by",
+	    "created_by",
        	'attachments',
         'completed_date'
     ];
@@ -40,7 +40,10 @@ class Activity extends Model
     return $this->belongsTo(ActivityType::class, 'activity_type_id')
                 ->withTrashed();
 }
-
+     public function createdBy()
+    {
+          return $this->belongsTo(Employee::class, 'created_by');
+    }
     public function dealer()
     {
         return $this->belongsTo(Dealer::class, 'dealer_id');

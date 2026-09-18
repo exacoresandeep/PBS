@@ -33,9 +33,9 @@ Route::post('/sap/downloadLedger', [\App\Http\Controllers\SAPController::class, 
         Route::get('outstanding-payment', [HanaController::class, 'getOutstandingPayments']);
         Route::get('dealer-data', [HanaController::class, 'getDealerData']);
         Route::middleware('auth:sanctum')->post('reset-password', [AuthController::class, 'resetPassword']);
-Route::middleware('auth:sanctum')
-            ->post('update-password', 
-                [AuthController::class, 'updateEmployeePassword']);
+        Route::middleware('auth:sanctum')
+                    ->post('update-password', 
+                        [AuthController::class, 'updateEmployeePassword']);
 
         Route::middleware('auth:sanctum')
             ->post('dealer/update-password', 
@@ -44,8 +44,8 @@ Route::middleware('auth:sanctum')
             Route::post('login', [DealerController::class, 'login']);
             Route::post('loginCommon', [AuthController::class, 'loginCommon']);
             Route::post('getCreditNoteForInvoice', [HanaController::class, 'getCreditNoteForInvoice']);
-	    Route::post('invoice-layout', [HanaController::class, 'fetchInvoiceLayout']);
-	    Route::middleware('auth:sanctum')->group(function () {
+            Route::post('invoice-layout', [HanaController::class, 'fetchInvoiceLayout']);
+            Route::middleware('auth:sanctum')->group(function () {
 		    Route::post('target', [TargetController::class, 'getDealerTargets']);
                 Route::post('store', [DealerController::class, 'store']);
                 Route::get('profile', [DealerController::class, 'getDealerProfile']);
@@ -112,11 +112,12 @@ Route::middleware('auth:sanctum')
     	    Route::get('/outstanding-payments', [OrderController::class, 'outstandingPaymentsStore']);
     	    Route::get('/getRegions', [AuthController::class, 'getRegions']);
             Route::prefix('orders')->group(function () {
+                Route::get('delete/{orderId}', [DealerOrderController::class, 'deleteOrder']); 
                 Route::post('/', [OrderController::class, 'store']); // Store  order
                 Route::get('/', [OrderController::class, 'index']); // List orders by current user ID
                 Route::get('{orderId}', [OrderController::class, 'show']); // order details
                 Route::post('/filter', [OrderController::class, 'orderFilter']);
-    	Route::get('/dealer/outstanding-payments/search',[OrderController::class, 'searchOutstandingPayments']);
+    	        Route::get('/dealer/outstanding-payments/search',[OrderController::class, 'searchOutstandingPayments']);
                 Route::get('/dealer/outstanding-payments/search-by-invoice',[OrderController::class, 'searchOutstandingByInvoice']);
                 Route::get('/dealer/outstanding-payments/product/{product_id}',[OrderController::class, 'outstandingPaymentsList']);
                 Route::get('/dealer/outstanding-payments/dealer/{dealer_id}',[OrderController::class, 'viewOutstandingPaymentByDealer']);

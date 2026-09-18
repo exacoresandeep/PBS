@@ -65,6 +65,13 @@
                 </a>
                 
             </li>
+             <li>
+                <a class="menu-title" href="{{ route('sales.orders.index') }}">
+                    <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+                    Order Request <span class="icon-right"></span>
+                </a>
+             
+            </li>
             <li>
                 <a class="menu-title">
                     <i class="fa fa-tasks" aria-hidden="true"></i>

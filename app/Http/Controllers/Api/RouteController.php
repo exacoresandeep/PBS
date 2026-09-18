@@ -2234,6 +2234,7 @@ class RouteController extends Controller
         $designationId  = $request->designation_id;
         $customerTypeId = $request->customertype_id;
         $duration       = $request->duration;
+        
 
 
         /*
@@ -2305,37 +2306,28 @@ class RouteController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $leadsQuery = Lead::query()
+        $leadsQuery = Lead::with("createdBy.employeeType","customerType")
             ->whereBetween('created_at', [
                 $fromDate,
                 $toDate
             ]);
 
-
-        /*
-        * District filter
-        */
         if (!empty($districtId)) {
-
             $leadsQuery->where(
                 'district_id',
                 $districtId
             );
         }
-
-
-        /*
-        * Customer Type filter
-        *
-        * Remove this block if Lead table does not have
-        * customer_type_id column.
-        */
+        if (!empty($designationId)) {
+            $leadsQuery->whereHas('createdBy.employeeType', function ($query) use ($designationId) {
+                $query->where('id', $designationId);
+            });
+        }
         if (!empty($customerTypeId)) {
+            $leadsQuery->whereHas('customerType', function ($query) use ($customerTypeId) {
+                $query->where('id', $customerTypeId);
+            });
 
-            $leadsQuery->where(
-                'customer_type_id',
-                $customerTypeId
-            );
         }
 
 
@@ -2352,6 +2344,8 @@ class RouteController extends Controller
                 $points->push([
                     'lat'           => (float) $lead->latitude,
                     'lng'           => (float) $lead->longitude,
+                    'date'           => $lead->created_at,
+                    'name'           => $lead->customer_name,
                     'activity_type' => 'Lead',
                 ]);
             }
@@ -2364,42 +2358,46 @@ class RouteController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $influencerQuery = InfluencerVisit::query()
+        $influencerQuery = InfluencerVisit::with("createdBy.employeeType")
             ->whereBetween('created_at', [
                 $fromDate,
                 $toDate
             ]);
 
-
-        /*
-        * Customer Type filter
-        *
-        * Remove if this column does not exist.
-        */
-        if (!empty($customerTypeId)) {
+        if (!empty($districtId)) {
 
             $influencerQuery->where(
-                'customer_type_id',
-                $customerTypeId
+                'district_id',
+                $districtId
             );
         }
+               
+        if (!empty($designationId)) {
+            $influencerQuery->whereHas('createdBy.employeeType', function ($query) use ($designationId) {
+                $query->where('id', $designationId);
+            });
+        }
 
+       
 
         $influencerVisits = $influencerQuery->get();
 
+        if(empty($customerTypeId)) {        
+            foreach ($influencerVisits as $visit) {
 
-        foreach ($influencerVisits as $visit) {
+                if (
+                    is_numeric($visit->latitude) &&
+                    is_numeric($visit->longitude)
+                ) {
 
-            if (
-                is_numeric($visit->latitude) &&
-                is_numeric($visit->longitude)
-            ) {
-
-                $points->push([
-                    'lat'           => (float) $visit->latitude,
-                    'lng'           => (float) $visit->longitude,
-                    'activity_type' => 'Influencer Visit',
-                ]);
+                    $points->push([
+                        'lat'           => (float) $visit->latitude,
+                        'lng'           => (float) $visit->longitude,
+                        'date'           => $visit->created_at,
+                        'name'           => $visit->influencer_name,
+                        'activity_type' => 'Influencer Visit',
+                    ]);
+                }
             }
         }
 
@@ -2410,42 +2408,43 @@ class RouteController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $dealerVisitsQuery = DealerVisit::query()
+        $dealerVisitsQuery = DealerVisit::with("dealer.district",'createdBy.employeeType')
             ->whereBetween('created_at', [
                 $fromDate,
                 $toDate
             ]);
 
-
-        /*
-        * Customer Type filter
-        *
-        * Keep this only if DealerVisit has customer_type_id.
-        */
-        if (!empty($customerTypeId)) {
-
-            $dealerVisitsQuery->where(
-                'customer_type_id',
-                $customerTypeId
-            );
+        
+        if (!empty($districtId)) {
+            $dealerVisitsQuery->whereHas('dealer.district', function ($query) use ($districtId) {
+                $query->where('id', $districtId);
+            });
+        }       
+        if (!empty($designationId)) {
+            $dealerVisitsQuery->whereHas('createdBy.employeeType', function ($query) use ($designationId) {
+                $query->where('id', $designationId);
+            });
         }
-
+        
 
         $dealerVisits = $dealerVisitsQuery->get();
 
+        if (empty($customerTypeId)) {        
+            foreach ($dealerVisits as $visit) {
 
-        foreach ($dealerVisits as $visit) {
+                if (
+                    is_numeric($visit->latitude) &&
+                    is_numeric($visit->longitude)
+                ) {
 
-            if (
-                is_numeric($visit->latitude) &&
-                is_numeric($visit->longitude)
-            ) {
-
-                $points->push([
-                    'lat'           => (float) $visit->latitude,
-                    'lng'           => (float) $visit->longitude,
-                    'activity_type' => 'Dealer Visit',
-                ]);
+                    $points->push([
+                        'lat'           => (float) $visit->latitude,
+                        'lng'           => (float) $visit->longitude,
+                        'date'           => $visit->created_at,
+                        'name'           => $visit->dealer->dealer_name,
+                        'activity_type' => 'Dealer Visit',
+                    ]);
+                }
             }
         }
 
@@ -2456,30 +2455,35 @@ class RouteController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $ordersQuery = Order::query()
+        $ordersQuery = Order::with('dealer.district',"createdBy.employeeType","customerType")
             ->whereBetween('created_at', [
                 $fromDate,
                 $toDate
             ]);
 
 
-        /*
-        * Customer Type filter
-        *
-        * Keep only if Order table has customer_type_id.
-        */
-        if (!empty($customerTypeId)) {
+        
+        if (!empty($districtId)) {
+            $ordersQuery->whereHas('dealer.district', function ($query) use ($districtId) {
+                $query->where('id', $districtId);
+            });
+        }       
+        if (!empty($designationId)) {
+            $ordersQuery->whereHas('createdBy.employeeType', function ($query) use ($designationId) {
+                $query->where('id', $designationId);
+            });
+        }
 
+        if (!empty($customerTypeId)) {
+            // dd($customerTypeId);
             $ordersQuery->where(
                 'customer_type_id',
                 $customerTypeId
             );
         }
 
-
         $orders = $ordersQuery->get();
-
-
+         
         foreach ($orders as $order) {
 
             if (
@@ -2490,60 +2494,57 @@ class RouteController extends Controller
                 $points->push([
                     'lat'           => (float) $order->latitude,
                     'lng'           => (float) $order->longitude,
+                    'name' => "OD00".$order->id,
+                    'date' => $order->created_at,
                     'activity_type' => 'Order',
                 ]);
             }
         }
-
-
         /*
         |--------------------------------------------------------------------------
         | 5. ACTIVITIES
         |--------------------------------------------------------------------------
         */
 
-        $activitiesQuery = Activity::query()
-            ->with('activityType')
+        $activitiesQuery = Activity::with('dealer.district','employee.employeeType','activityType')
             ->whereBetween('updated_at', [
                 $fromDate,
                 $toDate
             ]);
-
-
-        /*
-        * Designation filter
-        *
-        * Keep only if Activity table contains designation_id.
-        */
-        if (!empty($designationId)) {
-
-            $activitiesQuery->where(
-                'designation_id',
-                $designationId
-            );
+        
+        if (!empty($districtId)) {
+            $activitiesQuery->whereHas('dealer.district', function ($query) use ($districtId) {
+                $query->where('id', $districtId);
+            });
+        }       
+        if (!empty($designationId)) {            
+            $activitiesQuery->whereHas('employee.employeeType', function ($query) use ($designationId) {
+                $query->where('id', $designationId);
+            });
         }
 
+        if (empty($customerTypeId)) {        
+            $activities = $activitiesQuery->get();
+            foreach ($activities as $activity) {
 
-        $activities = $activitiesQuery->get();
+                if (
+                    is_numeric($activity->latitude) &&
+                    is_numeric($activity->longitude)
+                ) {
 
-
-        foreach ($activities as $activity) {
-
-            if (
-                is_numeric($activity->latitude) &&
-                is_numeric($activity->longitude)
-            ) {
-
-                $activityType = optional(
-                    $activity->activityType
-                )->name;
+                    $activityType = optional(
+                        $activity->activityType
+                    )->name;
 
 
-                $points->push([
-                    'lat'           => (float) $activity->latitude,
-                    'lng'           => (float) $activity->longitude,
-                    'activity_type' => $activityType ?: 'Activity',
-                ]);
+                    $points->push([
+                        'lat'           => (float) $activity->latitude,
+                        'lng'           => (float) $activity->longitude,
+                        'name' => $activityType,
+                        'date' => $activity->updated_at,
+                        'activity_type' => 'Activity',
+                    ]);
+                }
             }
         }
 
@@ -2554,41 +2555,43 @@ class RouteController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $commitmentsQuery = OutstandingPaymentCommitment::query()
+        $commitmentsQuery = OutstandingPaymentCommitment::with('employee',"outstandingPayment.dealer")
             ->whereBetween('committed_date', [
                 $fromDate->toDateString(),
                 $toDate->toDateString()
             ]);
 
 
-        /*
-        * If OutstandingPaymentCommitment has customer_type_id,
-        * this can be enabled.
-        */
-        if (!empty($customerTypeId)) {
-
-            $commitmentsQuery->where(
-                'customer_type_id',
-                $customerTypeId
-            );
+         if (!empty($districtId)) {
+            $commitmentsQuery->whereHas('employee.district', function ($query) use ($districtId) {
+                $query->where('id', $districtId);
+            });
+        }       
+        if (!empty($designationId)) {            
+            $commitmentsQuery->whereHas('employee.employeeType', function ($query) use ($designationId) {
+                $query->where('id', $designationId);
+            });
         }
 
 
         $commitments = $commitmentsQuery->get();
+        if (empty($customerTypeId)) {
+        
+            foreach ($commitments as $commitment) {
 
+                if (
+                    is_numeric($commitment->latitude) &&
+                    is_numeric($commitment->longitude)
+                ) {
 
-        foreach ($commitments as $commitment) {
-
-            if (
-                is_numeric($commitment->latitude) &&
-                is_numeric($commitment->longitude)
-            ) {
-
-                $points->push([
-                    'lat'           => (float) $commitment->latitude,
-                    'lng'           => (float) $commitment->longitude,
-                    'activity_type' => 'Payment Commitment',
-                ]);
+                    $points->push([
+                        'lat'           => (float) $commitment->latitude,
+                        'lng'           => (float) $commitment->longitude,
+                        'name' => $commitment->outstandingPayment->dealer->dealer_name,
+                        'date' => $commitment->committed_date,
+                        'activity_type' => 'Payment Commitment',
+                    ]);
+                }
             }
         }
 
