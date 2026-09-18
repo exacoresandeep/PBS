@@ -522,6 +522,16 @@ private function normalizeDate(?string $date): ?string
             ], 200);
 
         } catch (Exception $e) {
+            DB::rollBack();
+
+            Log::error('Delete Order Error', [
+                'order_id' => $orderId,
+                'user_id' => Auth::id(),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'statusCode' => 500,
