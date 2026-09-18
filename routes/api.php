@@ -112,7 +112,7 @@ Route::post('/sap/downloadLedger', [\App\Http\Controllers\SAPController::class, 
     	    Route::get('/outstanding-payments', [OrderController::class, 'outstandingPaymentsStore']);
     	    Route::get('/getRegions', [AuthController::class, 'getRegions']);
             Route::prefix('orders')->group(function () {
-                Route::get('delete/{orderId}', [DealerOrderController::class, 'deleteOrder']); 
+                Route::post('delete/{orderId}', [DealerOrderController::class, 'deleteOrder']); 
                 Route::post('/', [OrderController::class, 'store']); // Store  order
                 Route::get('/', [OrderController::class, 'index']); // List orders by current user ID
                 Route::get('{orderId}', [OrderController::class, 'show']); // order details
