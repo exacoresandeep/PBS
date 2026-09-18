@@ -10,13 +10,14 @@ class ApiMaintenance
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (env('API_MAINTENANCE', false)) {
+        if (config('app.api_maintenance', false)) {
             return response()->json([
                 'success' => false,
                 'statusCode' => 503,
                 'message' => 'API is currently under maintenance. Please try again later.',
             ], 503);
         }
+
         return $next($request);
     }
 }

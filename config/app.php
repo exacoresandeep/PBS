@@ -14,7 +14,7 @@ return [
     */
 
     'name' => env('APP_NAME', 'Laravel'),
-
+    'api_maintenance' => env('API_MAINTENANCE', false),
     /*
     |--------------------------------------------------------------------------
     | Application Environment
