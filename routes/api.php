@@ -23,7 +23,7 @@ use App\Http\Controllers\Logistics\InspectionController;
 use App\Http\Controllers\Logistics\TyreManagementController;
 use App\Http\Controllers\ExpenseController;
 
-// Route::middleware('api.maintenance')->group(function () {
+Route::middleware('api.maintenance')->group(function () {
 Route::post('/sap/outstanding', [\App\Http\Controllers\SAPController::class, 'fetchOutstanding']);
 Route::post('/sap/downloadLedger', [\App\Http\Controllers\SAPController::class, 'downloadLedger']);
     Route::post('/SalesOrderDetails', [SAPController::class, 'sendSalesOrder']);
@@ -490,4 +490,4 @@ Route::post('/sap/downloadLedger', [\App\Http\Controllers\SAPController::class, 
 
 
 Route::get('/greythr/access-token', [GreytHRController::class, 'getAccessToken']);
-// });
+});
