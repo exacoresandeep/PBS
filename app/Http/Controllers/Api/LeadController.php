@@ -1225,14 +1225,18 @@ class LeadController extends Controller
                     'influencer_visit_id' => $visit->id,
                     'follow_up_date'      => $request->follow_up_date,
                     'reason'              => $request->follow_up_reason,
+                    'remarks'              => $request->remarks ?? null,
                     'notification_status' => 'pending',
                     'created_by'          => Auth::id(),
                 ]);
-                InfluencerVisitFollowUp::where('id', $visit->id)
+                InfluencerVisit::where('id', $visit->id)
                 ->update([
                     'purpose'           => $request->purpose,
                     'current_project'   => $request->current_project,
                     'upcoming_project'  => $request->upcoming_project,
+                    'customer_name'  => $request->customer_name ?? "",
+                    'site_details'  => $request->site_details ?? "",
+                    
                     'total_deal_volume' => $balance,
                     'latitude'            => $request->latitude,       
                     'longitude'           => $request->longitude, 
@@ -1717,6 +1721,8 @@ private function getInfluencerVisitListByStatus(array $statuses, $productId = nu
                 'id' => $visit->id,
                 'influencer_name' => $visit->influencer_name,
                 'phone' => $visit->phone,
+                'customer_name' => $visit->customer_name,
+                'site_details' => $visit->site_details,
                 'place' => $visit->place,
                 'influencer_type' => $visit->influencer_type,
                 'visit_type' => $visit->visit_type,
@@ -1763,6 +1769,7 @@ private function getInfluencerVisitListByStatus(array $statuses, $productId = nu
                     'id' => $followUp->id,
                     'follow_up_date' => optional($followUp->follow_up_date)->format('d/m/Y'),
                     'follow_up_reason' => $followUp->reason,
+                    'remarks' => $followUp->remarks,
                 ];
             })->values();
 

@@ -14,6 +14,7 @@ class InfluencerVisitFollowUp extends Model
         'influencer_visit_id',
         'follow_up_date',
         'reason',
+        'remarks',
         'created_by',
         'notification_status',
     ];
