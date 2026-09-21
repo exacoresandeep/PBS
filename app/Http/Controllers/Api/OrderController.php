@@ -3759,8 +3759,8 @@ public function orderApprovalSearch(Request $request)
                 'remarks' => 'nullable|string',
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|string',
-                 'latitude' => 'required|string',
-                'longitude' => 'required|string',
+                'latitude' => 'required|numeric',
+                'longitude' => 'required|numeric',
             ];
 
             $purpose = $request->input('purpose_of_visit');

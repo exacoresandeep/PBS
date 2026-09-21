@@ -1019,8 +1019,8 @@ class LeadController extends Controller
                 'influencer_type'     => 'required|string|max:255',
                 'district_id'         => 'required|integer',
                 'status'              => 'required|in:Opened,Follow Up,Won,Lost',             
-                'latitude' => 'required|string',
-                'longitude' => 'required|string',            
+                'latitude' => 'required|numeric',
+                'longitude' => 'required|numeric',            
 
                 // Follow Up
                 'visit_type'          => 'required_if:status,Follow Up|string|max:255',
@@ -1063,6 +1063,12 @@ class LeadController extends Controller
             $validated['created_by'] = Auth::id();
             $validated['status'] = $validated['status'] ?? 'Opened';
 
+            // dd([
+            //     'request_latitude' => $request->input('latitude'),
+            //     'request_longitude' => $request->input('longitude'),
+            //     'validated_latitude' => $validatedData['latitude'] ?? null,
+            //     'validated_longitude' => $validatedData['longitude'] ?? null,
+            // ]);
             /** CREATE MAIN VISIT */
             $visit = InfluencerVisit::create($validated);
 

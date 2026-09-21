@@ -34,8 +34,8 @@ class DealerVisit extends Model
      protected $casts = [
         'attachments' => 'array', // store as JSON
         'stock_details' => 'array', // store as JSON
-        'latitude' => 'string',
-        'longitude' => 'string',
+         'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
         'products' => 'array',
         'other_brands' => 'boolean',
         'other_brand_details' => 'array',

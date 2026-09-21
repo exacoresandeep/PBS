@@ -36,8 +36,8 @@ class InfluencerVisit extends Model
     protected $casts = [
         'steel_used' => 'array', 
         'follow_up_date' => 'date',
-        'latitude' => 'string',
-        'longitude' => 'string',
+         'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
 
     ];
  
