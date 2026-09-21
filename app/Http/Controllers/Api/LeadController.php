@@ -1185,7 +1185,7 @@ class LeadController extends Controller
 
     public function updateInfluencerVisit(Request $request, $visitId, FirebasePushService $fcm)
     {
-        dd("awdwd");
+        
         try {
             $validated = $request->validate([
                 'status' => 'required|in:Opened,Follow Up,Won,Lost',
@@ -1231,12 +1231,7 @@ class LeadController extends Controller
                     'notification_status' => 'pending',
                     'created_by'          => Auth::id(),
                 ]);
-                dd([
-                'request_latitude' => $request->input('latitude'),
-                'request_longitude' => $request->input('longitude'),
-                'validated_latitude' => $validatedData['latitude'] ?? null,
-                'validated_longitude' => $validatedData['longitude'] ?? null,
-            ]);
+                
                 InfluencerVisit::where('id', $visit->id)
                 ->update([
                     'purpose'           => $request->purpose,
