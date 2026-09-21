@@ -2858,7 +2858,7 @@ class OrderController extends Controller
             ], 500);
         }
     }
-public function orderApprovalList(Request $request)
+    public function orderApprovalList(Request $request)
     {
         try {
             $user = Auth::user();
@@ -3861,19 +3861,21 @@ public function orderApprovalSearch(Request $request)
                 ]);
 
                 $orderData['created_by'] = $employee->id;
+                $orderData['longitude'] = $validatedData['longitude'] ?? null;
+                $orderData['latitude'] = $validatedData['latitude'] ?? null;
 
-                if ($employee->employee_type_id != 1) {
+                if($employee->employee_type_id != 1) {
                     $orderData['order_approved'] = '0';
                 }
 
                 // Format dates
-                if (!empty($orderData['payment_date'])) {
+                if(!empty($orderData['payment_date'])) {
                     $orderData['payment_date'] = Carbon::createFromFormat('d-m-Y', $orderData['payment_date'])->format('Y-m-d');
                 }
-                if (!empty($orderData['billing_date'])) {
+                if(!empty($orderData['billing_date'])) {
                     $orderData['billing_date'] = Carbon::createFromFormat('d-m-Y', $orderData['billing_date'])->format('Y-m-d');
                 }
-                if (!empty($orderData['delivery_date'])) {
+                if(!empty($orderData['delivery_date'])) {
                     $orderData['delivery_date'] = Carbon::createFromFormat('d-m-Y', $orderData['delivery_date'])->format('Y-m-d');
                 }
 
