@@ -1221,7 +1221,7 @@ class LeadController extends Controller
             // Calculate balance
             $balance = $total - ($won + $lost);
             // If Follow Up status is requested, create a follow up record (not a new visit)
-            if ($request->status == 'Follow Up') {
+            if($request->status == 'Follow Up') {
                 InfluencerVisitFollowUp::create([
                     'influencer_visit_id' => $visit->id,
                     'follow_up_date'      => $request->follow_up_date,
@@ -1252,7 +1252,7 @@ class LeadController extends Controller
 
             
             // LOST handling
-            if ($request->status == 'Lost') {
+            if($request->status == 'Lost') {
                 $lost = (float) data_get($request, 'lost_details.lost_volume', $oldLost);
 
                 $visit->lost_volume        = $lost;
@@ -1262,7 +1262,7 @@ class LeadController extends Controller
             }
 
             // WON handling + create order if provided
-            if ($request->status == 'Won') {
+            if($request->status == 'Won') {
                 $won = (float) ($request->won_volume ?? $oldWon);
                 $visit->won_volume = $won;
 
@@ -1330,7 +1330,7 @@ class LeadController extends Controller
             $rootChainId = $visit->chain_id ?? $visit->id;
 
             // Create next follow-up visit when there is remaining balance
-            if (in_array($request->status, ['Won', 'Lost']) && $balance > 0) {
+            if(in_array($request->status, ['Won', 'Lost']) && $balance > 0) {
                 InfluencerVisit::create([
                     'influencer_name'   => $visit->influencer_name,
                     'phone'             => $visit->phone,
@@ -1353,7 +1353,7 @@ class LeadController extends Controller
 
             // Create new opened visit when fully closed (if you want these to be part of chain,
             // set chain_id => $rootChainId; otherwise keep null)
-            if (in_array($request->status, ['Won', 'Lost']) && $balance <= 0) {
+            if(in_array($request->status, ['Won', 'Lost']) && $balance <= 0) {
                 InfluencerVisit::create([
                     'influencer_name'   => $visit->influencer_name,
                     'phone'             => $visit->phone,
