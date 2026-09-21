@@ -1063,12 +1063,7 @@ class LeadController extends Controller
             $validated['created_by'] = Auth::id();
             $validated['status'] = $validated['status'] ?? 'Opened';
 
-            // dd([
-            //     'request_latitude' => $request->input('latitude'),
-            //     'request_longitude' => $request->input('longitude'),
-            //     'validated_latitude' => $validatedData['latitude'] ?? null,
-            //     'validated_longitude' => $validatedData['longitude'] ?? null,
-            // ]);
+            
             /** CREATE MAIN VISIT */
             $visit = InfluencerVisit::create($validated);
 
@@ -1235,6 +1230,12 @@ class LeadController extends Controller
                     'notification_status' => 'pending',
                     'created_by'          => Auth::id(),
                 ]);
+                dd([
+                'request_latitude' => $request->input('latitude'),
+                'request_longitude' => $request->input('longitude'),
+                'validated_latitude' => $validatedData['latitude'] ?? null,
+                'validated_longitude' => $validatedData['longitude'] ?? null,
+            ]);
                 InfluencerVisit::where('id', $visit->id)
                 ->update([
                     'purpose'           => $request->purpose,
