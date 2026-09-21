@@ -28,7 +28,10 @@ class InfluencerVisit extends Model
         'reason_for_lost', 
         'chain_id',
         'status',
-        'created_by'
+        'created_by',
+        'latitude',
+        'longitude'
+
     ];
     protected $casts = [
         'steel_used' => 'array', 

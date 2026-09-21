@@ -27,6 +27,9 @@ class DealerVisit extends Model
         'products',
         'other_brands',
         'other_brand_details',
+        'latitude',
+        'longitude'
+
     ];
      protected $casts = [
         'attachments' => 'array', // store as JSON
