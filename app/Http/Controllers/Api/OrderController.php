@@ -3759,6 +3759,8 @@ public function orderApprovalSearch(Request $request)
                 'remarks' => 'nullable|string',
                 'attachments' => 'nullable|array',
                 'attachments.*' => 'nullable|string',
+                 'latitude' => 'required|string',
+                'longitude' => 'required|string',
             ];
 
             $purpose = $request->input('purpose_of_visit');
@@ -3817,6 +3819,8 @@ public function orderApprovalSearch(Request $request)
             $dealerVisit = DealerVisit::create([
                 'dealer_id' => $validatedData['dealer_id'],
                 'aso_id' => $validatedData['aso_id'] ?? null,
+                'longitude' => $validatedData['longitude'] ?? null,
+                'latitude' => $validatedData['latitude'] ?? null,
                 'purpose_of_visit' => $validatedData['purpose_of_visit'],
                 'item_type' => $validatedData['item_type'] ?? null,
                 'remarks' => $validatedData['remarks'] ?? null,

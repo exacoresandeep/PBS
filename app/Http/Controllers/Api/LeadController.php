@@ -1019,8 +1019,8 @@ class LeadController extends Controller
                 'influencer_type'     => 'required|string|max:255',
                 'district_id'         => 'required|integer',
                 'status'              => 'required|in:Opened,Follow Up,Won,Lost',             
-                'latitude'            => 'required',             
-                'longitude'           => 'required',             
+                'latitude' => 'required|string',
+                'longitude' => 'required|string',            
 
                 // Follow Up
                 'visit_type'          => 'required_if:status,Follow Up|string|max:255',
