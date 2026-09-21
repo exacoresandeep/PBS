@@ -1185,6 +1185,7 @@ class LeadController extends Controller
 
     public function updateInfluencerVisit(Request $request, $visitId, FirebasePushService $fcm)
     {
+        dd("awdwd");
         try {
             $validated = $request->validate([
                 'status' => 'required|in:Opened,Follow Up,Won,Lost',
