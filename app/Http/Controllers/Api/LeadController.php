@@ -1219,8 +1219,7 @@ class LeadController extends Controller
             // start with previous values, will be overwritten if new values provided
             $won  = $oldWon;
             $lost = $oldLost;
-            // Calculate balance
-            $balance = $total - ($won + $lost);
+            
             // If Follow Up status is requested, create a follow up record (not a new visit)
             if($request->status == 'Follow Up') {
                 InfluencerVisitFollowUp::create([
@@ -1241,8 +1240,7 @@ class LeadController extends Controller
                     'upcoming_project'  => $request->upcoming_project,
                     'customer_name'  => $request->customer_name ?? "",
                     'site_details'  => $request->site_details ?? "",
-                    
-                    'total_deal_volume' => $balance,
+                    'total_deal_volume' => $request->total_deal_volume ?? 0,
                     'latitude'            => $request->latitude,       
                     'longitude'           => $request->longitude, 
                 ]);
