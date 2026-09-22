@@ -1235,6 +1235,8 @@ class LeadController extends Controller
                 InfluencerVisit::where('id', $visit->id)
                 ->update([
                     'purpose'           => $request->purpose,
+                    'visit_type'           => $request->visit_type,
+                    'lead_type'           => $request->lead_type,
                     'current_project'   => $request->current_project,
                     'upcoming_project'  => $request->upcoming_project,
                     'customer_name'  => $request->customer_name ?? "",
