@@ -41,6 +41,7 @@ class AccountsController extends Controller
 
         
 	    $dealerIdsWithDue = OutstandingNew::where('due_balance', '>', 0)
+                ->where('product_id', $productID)
                 ->pluck('dealer_id');
 
         $dueDealerData = DB::table('outstanding_payments as op1')
