@@ -64,6 +64,7 @@ class Order extends Model
         'order_remarks',
         'vehicle_status',
         'vehicle_remarks',
+        'trip_allocated'
     ];
 
     protected $casts = [
@@ -91,10 +92,10 @@ class Order extends Model
         return $value ? Carbon::parse($value)->format('d/m/Y') : null;
     }
 
-    public function getDeliveryDateAttribute($value)
-    {
-        return $value ? Carbon::parse($value)->format('d/m/Y') : null;
-    }
+    // public function getDeliveryDateAttribute($value)
+    // {
+    //     return $value ? Carbon::parse($value)->format('d/m/Y') : null;
+    // }
  
     public function orderType()
     {

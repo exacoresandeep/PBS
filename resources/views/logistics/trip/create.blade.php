@@ -367,7 +367,7 @@ $(document).on('change', '.sortOrderSelect', function() {
 });
 
 
-let pickupIndex = 0;
+var pickupIndex = 0;
 
 function updateIndexes() {
     const pickups = document.querySelectorAll('#pickup-container .pickup-point');

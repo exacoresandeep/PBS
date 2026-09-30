@@ -26,7 +26,8 @@ class salesController extends Controller
         $statusFilter = $request->get('status');       
 
         
-	$dealerIdsWithDue = OutstandingNew::where('due_balance', '>', 0)
+	    $dealerIdsWithDue = OutstandingNew::where('due_balance', '>', 0)
+                ->where('product_id', $productID)
                 ->pluck('dealer_id');
 
         $dueDealerData = DB::table('outstanding_payments as op1')
@@ -62,7 +63,7 @@ class salesController extends Controller
                 'createdBy.employeeType:id,type_name',
                 'sendForApprovalBy:id,name,employee_code'
             ])
-    ->whereDate('created_at', '>=', now()->subDays(60))
+            ->whereDate('created_at', '>=', now()->subDays(60))
     		->whereHas('orderItems', function ($q) use ($productID) {
                 $q->where('product_id', $productID);
             })
@@ -118,8 +119,8 @@ class salesController extends Controller
             });
         }         
 
-	return DataTables::of($orders)
-		->filter(function ($query) use ($request) {
+        return DataTables::of($orders)
+            ->filter(function ($query) use ($request) {
                 if ($search = $request->get('search')['value'] ?? false) {
 
                     $query->where(function ($q) use ($search) {
@@ -196,38 +197,38 @@ class salesController extends Controller
             })
             ->addColumn('amount', fn($order) => (float) ($order->total_amount))
             ->addColumn('status', function ($order) {
-       switch ($order->status) {
+            switch ($order->status) {
 
-    case 'Pending':
-        return '<span class="badge bg-warning">Pending</span>';
+                case 'Pending':
+                    return '<span class="badge bg-warning">Pending</span>';
 
-    case 'Accepted':
-        return '<span class="badge bg-primary">Accepted</span>';
+                case 'Accepted':
+                    return '<span class="badge bg-primary">Accepted</span>';
 
-    case 'Approved':
-        return '<span class="badge bg-success">Approved</span>';
+                case 'Approved':
+                    return '<span class="badge bg-success">Approved</span>';
 
-    case 'Rejected':
-        return '<span class="badge bg-danger">Rejected</span>';
+                case 'Rejected':
+                    return '<span class="badge bg-danger">Rejected</span>';
 
-    case 'Dispatched':
-        return '<span class="badge bg-info">Dispatched</span>';
+                case 'Dispatched':
+                    return '<span class="badge bg-info">Dispatched</span>';
 
-    case 'In Transit':
-        return '<span class="badge bg-secondary">In Transit</span>';
+                case 'In Transit':
+                    return '<span class="badge bg-secondary">In Transit</span>';
 
-    case 'Delivered':
-        return '<span class="badge bg-success">Delivered</span>';
+                case 'Delivered':
+                    return '<span class="badge bg-success">Delivered</span>';
 
-    case 'Accounts Approved':
-        return '<span class="badge bg-success">Accounts Approved</span>';
+                case 'Accounts Approved':
+                    return '<span class="badge bg-success">Accounts Approved</span>';
 
-    case 'Accounts Rejected':
-        return '<span class="badge bg-danger">Accounts Rejected</span>';
+                case 'Accounts Rejected':
+                    return '<span class="badge bg-danger">Accounts Rejected</span>';
 
-    default:
-        return '<span class="badge bg-dark">Unknown</span>';
-}
+                default:
+                    return '<span class="badge bg-dark">Unknown</span>';
+            }
             })
             ->addColumn('action', fn($order) =>
                 '<button class="btn btn-info btn-sm view-order" data-id="' . $order->id . '" title="View">
@@ -372,7 +373,12 @@ class salesController extends Controller
     }
 
    
-   
+   public function salesOrderManagement(){
+
+   }
+   public function salesOrderManagementList(){
+    
+   }
 
 
     public function export(Request $request)

@@ -135,6 +135,9 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
         Route::prefix('orders')->group(function () {
             Route::get('/', [SalesController::class, 'index'])->name('sales.orders.index');
             Route::get('/view/{id}', [SalesController::class, 'viewOrder'])->name('sales.orders.view');
+            Route::get('/management', [SalesController::class, 'salesOrderManagement'])->name('sales.orders.management');
+            Route::get('/managementList', [SalesController::class, 'salesOrderManagementList'])->name('sales.orders.managementlist');
+   
         });
         Route::get('/get-employees/{employeeTypeId}', [EmployeeController::class, 'getEmployeesByType'])->name('sales.getEmployees');
         Route::get('/employees-by-dealer/{dealer_id}', [ActivityController::class, 'getEmployeesByDealer']);
@@ -161,6 +164,10 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
         Route::get('/export/influencer-visits', [DashboardController::class, 'exportInfluencerVisits'])->name('sales.influencer-visits');
         Route::get('/export/aashiyana-orders', [DashboardController::class, 'exportAashiyanaOrders'])->name('sales.aashiyana-orders');
         Route::get('/export/tiscon-orders', [DashboardController::class, 'exportTisconOrders'])->name('sales.tiscon-orders');
+        
+        
+        Route::get('/order/management', [SalesController::class, 'salesOrderManagement'])->name('sales.order.management');
+        Route::get('/order/managementList', [SalesController::class, 'salesOrderManagementList'])->name('sales.order.managementlist');
     });
     
     Route::prefix('accounts')->middleware('auth')->group(function () {

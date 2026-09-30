@@ -17,6 +17,8 @@ use App\Models\TripOrder;
 use App\Models\TripPickup;
 use App\Models\VehicleType;
 use App\Models\Vehicle;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -197,78 +199,174 @@ class TripController extends Controller
         return response()->json($drivers);
     }
 
-    public function pendingOrders()
+    public function pendingOrdersOld()
     {
         $orders = Order::with(['dealer', 'orderItems.product'])
             ->where('status', 'Accounts Approved')
+           
             ->orderBy('delivery_date', 'asc')
             ->get();
 
         return response()->json($orders);
     }
 
-    public function storeTrip(Request $request)
+    public function pendingOrders()
     {
-        $validated = $request->validate([
-            'vehicle_id' => 'required|integer',
-            'driver_id' => 'required|integer',
-            'orders' => 'required|array|min:1',
-            'pickup_points' => 'nullable|array',
-            'total_quantity' => 'required',
-            'approx_km' => 'required|integer',
-            'from_location' => 'required|string',
-            'to_location' => 'required|string',
-            'delivery_date' => 'required|string',
-        ]);
+        $fromDate = \Carbon\Carbon::now()->subMonths(1)->startOfDay();
+        $rows = DB::select("
+            SELECT
+                o.id AS order_id,
+                o.delivery_date,
 
-        // Example save logic
-        $trip = new Trip();
+                d.id AS dealer_id,
+                d.dealer_name,
+                d.district,
+                d.address,
 
-        $lastTrip = Trip::latest('id')->first();
-        $nextId = $lastTrip ? $lastTrip->id + 1 : 1;
-        $tripCode = 'TRIP' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
+                oi.id AS order_item_id,
+                oi.product_id,
+                oi.total_quantity,
 
-        $trip->vehicle_id = $validated['vehicle_id'];
-        $trip->trip_code = $tripCode;
-        $trip->driver_id = $validated['driver_id'];
-        $trip->total_quantity = $validated['total_quantity'];
-        $trip->approx_km = $validated['approx_km'];
-        $trip->from_location = $validated['from_location'];
-        $trip->to_location = $validated['to_location'];
-        $trip->assign_date = now()->format('Y-m-d');
-        $trip->delivery_date = $validated['delivery_date'];
-        $trip->pickup_point_flag = !empty($pickupPoints) ? 'Yes' : 'No';
-        $trip->notification_status = 'Pending';
-        $trip->created_by = '1';
-        $trip->updated_by = '1';
-        $trip->status = 'Scheduled';
-        $trip->save();
+                p.product_name
 
-        $orders = is_string($validated['orders'])
+            FROM orders o
+
+            LEFT JOIN dealers d
+                ON d.id = o.dealer_id
+
+            LEFT JOIN order_items oi
+                ON oi.order_id = o.id
+
+            LEFT JOIN products p
+                ON p.id = oi.product_id
+
+            WHERE o.trip_allocated='0' AND o.status = ?
+            AND o.delivery_date >= ?
+
+            ORDER BY o.delivery_date ASC, o.id ASC, oi.id ASC
+            ", [
+                'Accounts Approved',
+                $fromDate->format('Y-m-d')
+            ]);
+
+        $orders = [];
+
+        foreach ($rows as $row) {
+
+            if (!isset($orders[$row->order_id])) {
+
+                $orders[$row->order_id] = [
+                    'id' => $row->order_id,
+                    'delivery_date' => $row->delivery_date,
+
+                    'dealer' => [
+                        'id' => $row->dealer_id,
+                        'dealer_name' => $row->dealer_name,
+                        'district' => $row->district,
+                        'address' => $row->address,
+                    ],
+
+                    'order_items' => []
+                ];
+            }
+
+            if ($row->order_item_id) {
+
+                $orders[$row->order_id]['order_items'][] = [
+                    'id' => $row->order_item_id,
+                    'product_id' => $row->product_id,
+                    'product_name' => $row->product_name,
+                    'total_quantity' => $row->total_quantity,
+                ];
+            }
+        }
+
+        return response()->json(array_values($orders));
+    }
+
+    public function storeTrip(Request $request)
+{
+    
+    $validated = $request->validate([
+        'vehicle_id' => 'required|integer',
+        'driver_id' => 'required|integer',
+        'orders' => 'required|array|min:1',
+        'pickup_points' => 'nullable|array',
+        'total_quantity' => 'required',
+        'approx_km' => 'required|integer',
+        'from_location' => 'required|string',
+        'to_location' => 'required|string',
+        'delivery_date' => 'required',
+    ]);
+
+    // Request: 29/08/2026
+    // DB:      2026-08-29
+    
+
+    $trip = new Trip();
+
+    $lastTrip = Trip::latest('id')->first();
+    $nextId = $lastTrip ? $lastTrip->id + 1 : 1;
+
+    $trip->vehicle_id = $validated['vehicle_id'];
+    $trip->trip_code = 'TRIP' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
+    $trip->driver_id = $validated['driver_id'];
+    $trip->total_quantity = $validated['total_quantity'];
+    $trip->approx_km = $validated['approx_km'];
+    $trip->from_location = $validated['from_location'];
+    $trip->to_location = $validated['to_location'];
+    $trip->assign_date = now()->format('Y-m-d');
+    $trip->delivery_date = $validated['delivery_date'];
+    $trip->pickup_point_flag = !empty($validated['pickup_points'])
+        ? 'Yes'
+        : 'No';
+    $trip->notification_status = 'Pending';
+    $trip->created_by = '1';
+    $trip->updated_by = '1';
+    $trip->status = 'Scheduled';
+
+    $trip->save();
+
+    $orders = is_string($validated['orders'])
         ? json_decode($validated['orders'], true)
         : $validated['orders'];
-// dd($orders);
-        //  $orders = array_map('intval', $orders);
-        foreach ($orders as $index => $order) {
-             $orderId   = (int) $order['order_id'];
-            $sortOrder = $order['sort_order'] ?? null;
-            $orderData = Order::with(['dealer', 'orderItems.product'])->find((int) $orderId);
 
-            $quantity = $orderData->orderItems->sum(function($item) {
-                return $item->total_quantity ?? 0;
-            });
-            TripOrder::create([
-                'trip_id'           => $trip->id,
-                'order_id'          => $orderId,
-                'delivery_point_no' => $sortOrder,
-                'delivery_address'  => $orderData->dealer->address ?? null,
-                'contact_person'    => $orderData->dealer->dealer_name ?? null,
-                'contact_phone'     => $orderData->dealer->phone ?? null,
-                'office_phone'      => $orderData->dealer->phone ?? null,
-                'delivery_date'     => $orderData->delivery_date ?? $trip->delivery_date,
-                'quantity'          => $quantity ?? 0,
-            ]);
+    foreach ($orders as $order) {
+
+        $orderId = (int) $order['order_id'];
+        $sortOrder = $order['sort_order'] ?? null;
+
+        $orderData = Order::with(['dealer', 'orderItems.product'])
+            ->find($orderId);
+        
+        if (!$orderData) {
+            continue;
         }
+        Order::where('id', $orderId)->update([
+            'trip_allocated' => "1",
+            
+        ]);
+
+        $quantity = $orderData->orderItems->sum(function ($item) {
+            return $item->total_quantity ?? 0;
+        });
+
+        // IMPORTANT:
+        // Get actual DB value, bypassing the accessor.
+        $orderDeliveryDate = $orderData->getRawOriginal('delivery_date');
+
+        TripOrder::create([
+            'trip_id'           => $trip->id,
+            'order_id'          => $orderId,
+            'delivery_point_no' => $sortOrder,
+            'delivery_address'  => $orderData->dealer->address ?? null,
+            'contact_person'    => $orderData->dealer->dealer_name ?? null,
+            'contact_phone'     => $orderData->dealer->phone ?? null,
+            'office_phone'      => $orderData->dealer->phone ?? null,
+            'delivery_date'     => $orderDeliveryDate ?: $validated['delivery_date'],
+            'quantity'          => $quantity,
+        ]);
+    }
 
 
         if (!empty($validated['pickup_points']) && is_array($validated['pickup_points'])) {

@@ -2382,23 +2382,51 @@ public function influencerSearch(Request $request)
             'tripRoute',
             'createdBy','orders'
         ]);
-
         if ($request->filled('from_date') && $request->filled('to_date')) {
 
-            $query->whereBetween('created_at', [
-                $request->from_date . ' 00:00:00',
-                $request->to_date . ' 23:59:59'
-            ]);
+            $fromDate = $request->from_date . ' 00:00:00';
+            $toDate   = $request->to_date . ' 23:59:59';
+
+            $query->where(function ($q) use ($fromDate, $toDate) {
+                $q->whereBetween('created_at', [$fromDate, $toDate])
+                ->orWhereBetween('updated_at', [$fromDate, $toDate]);
+            });
 
         } elseif ($request->filled('from_date')) {
 
-            $query->whereDate('created_at', '>=', $request->from_date);
+            $fromDate = $request->from_date . ' 00:00:00';
+
+            $query->where(function ($q) use ($fromDate) {
+                $q->where('created_at', '>=', $fromDate)
+                ->orWhere('updated_at', '>=', $fromDate);
+            });
 
         } elseif ($request->filled('to_date')) {
 
-            $query->whereDate('created_at', '<=', $request->to_date);
+            $toDate = $request->to_date . ' 23:59:59';
+
+            $query->where(function ($q) use ($toDate) {
+                $q->where('created_at', '<=', $toDate)
+                ->orWhere('updated_at', '<=', $toDate);
+            });
 
         }
+        // if ($request->filled('from_date') && $request->filled('to_date')) {
+
+        //     $query->whereBetween('created_at', [
+        //         $request->from_date . ' 00:00:00',
+        //         $request->to_date . ' 23:59:59'
+        //     ]);
+
+        // } elseif ($request->filled('from_date')) {
+
+        //     $query->whereDate('created_at', '>=', $request->from_date);
+
+        // } elseif ($request->filled('to_date')) {
+
+        //     $query->whereDate('created_at', '<=', $request->to_date);
+
+        // }
         if ($request->filled('district')) {
             $query->where(
                 'district_id',
