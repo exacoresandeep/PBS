@@ -99,28 +99,29 @@ class AllLeadExport implements
 
         if ($request->filled('from_date')) {
 
-            $query->where(
-                'created_at',
-                '>=',
-                $request->from_date . ' 00:00:00'
-            );
-        }
+    $fromDate = $request->from_date . ' 00:00:00';
 
-        /*
-        |--------------------------------------------------------------------------
-        | To Date
-        |--------------------------------------------------------------------------
-        */
+    $query->where(function ($q) use ($fromDate) {
+        $q->where('created_at', '>=', $fromDate)
+          ->orWhere('updated_at', '>=', $fromDate);
+    });
+}
 
-        if ($request->filled('to_date')) {
+/*
+|--------------------------------------------------------------------------
+| To Date
+|--------------------------------------------------------------------------
+*/
 
-            $query->where(
-                'created_at',
-                '<=',
-                $request->to_date . ' 23:59:59'
-            );
-        }
+if ($request->filled('to_date')) {
 
+    $toDate = $request->to_date . ' 23:59:59';
+
+    $query->where(function ($q) use ($toDate) {
+        $q->where('created_at', '<=', $toDate)
+          ->orWhere('updated_at', '<=', $toDate);
+    });
+}
         /*
         |--------------------------------------------------------------------------
         | District
