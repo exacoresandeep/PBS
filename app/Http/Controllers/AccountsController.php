@@ -436,7 +436,7 @@ class AccountsController extends Controller
     }
 
     
-public function approveOrderNew(Request $request, $id, FirebasePushService $fcm)
+    public function approveOrderNew(Request $request, $id, FirebasePushService $fcm)
     {
         $order = Order::findOrFail($id);
 
@@ -540,10 +540,10 @@ public function approveOrderNew(Request $request, $id, FirebasePushService $fcm)
         $orderType = $orderTypeMap[$orderTypeName] ?? null;
         // Get Employee Info
         
-  	$today = Carbon::today();
+        $today = Carbon::today();
         if ($order->delivery_date) {
-      //      $deliveryDate = Carbon::parse($order->delivery_date);
-$deliveryDate = Carbon::createFromFormat('d/m/Y', $order->delivery_date);
+                 $deliveryDate = Carbon::parse($order->delivery_date);
+            // $deliveryDate = Carbon::createFromFormat('d/m/Y', $order->delivery_date);
             if ($deliveryDate->lessThan($today)) {
                 $deliveryDate = $today;
             }
@@ -573,9 +573,9 @@ $deliveryDate = Carbon::createFromFormat('d/m/Y', $order->delivery_date);
             "DocType" => "dDocument_Items", //static item.      
             "DocDueDate" => $deliveryDate->format('Y-m-d'),// optional($order->delivery_date)->format('Y-m-d') ?? now()->addDays(7)->format('Y-m-d'),
         ];
-if($order->id=="56438"){
-// dd($sapPayload); 
-}
+        if($order->id=="56438"){
+        // dd($sapPayload); 
+        }
 
         //    dd($sapPayload); //push to live
         try {
@@ -584,13 +584,13 @@ if($order->id=="56438"){
                 'Content-Type' => 'application/json',
   	  ])->post('http://192.168.0.3:3958/Exacore/CreateOrder', $sapPayload);
           //  $responseBody = trim($response->body(), "\" \n\r\t");
-$responseData = $response->json();
-if (
-    $response->successful() &&
-    isset($responseData['message']) &&
-    strtolower($responseData['message']) === 'success'
-) {
-//	if ($response->successful() && strtolower($responseBody) === 'success') {
+        $responseData = $response->json();
+        if (
+            $response->successful() &&
+            isset($responseData['message']) &&
+            strtolower($responseData['message']) === 'success'
+        ) {
+            //	if ($response->successful() && strtolower($responseBody) === 'success') {
 
                 // Send FCM notification to assigned Dealer
                 try {
