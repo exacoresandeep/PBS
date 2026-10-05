@@ -2899,7 +2899,7 @@ class OrderController extends Controller
                 ->whereNotNull('op1.due_date')
                 ->where('op1.status', 'open')
                 ->whereDate('op1.due_date', '<', Carbon::now()->subDays(25))
-->groupBy('op1.dealer_id')//		->distinct()
+        ->groupBy('op1.dealer_id')//		->distinct()
 		->get();
 	    $dueDealerMap = $dueDealerData->keyBy('dealer_id'); // for due_date
 		$dueDealerIds = $dueDealerData->pluck('dealer_id'); // for filtering

@@ -264,13 +264,13 @@ class OperationsController extends Controller
                     });
                 });
             })
-            ->where(function ($query) {
-	 	$query->where('order_approved', '1')
-	 	   ->orWhere(function ($q) {
-                    $q->where('order_approved', '!=', '2')
-                        ->orWhereNull('order_approved');
-                });
-	    })
+            // ->where(function ($query) {
+	 	    //     $query->where('order_approved', '1')
+            // ->orWhere(function ($q) {
+            //             $q->where('order_approved', '!=', '2')
+            //                 ->orWhereNull('order_approved');
+            //         });
+            // })
             ->where(function ($q) {
                 $q->whereNull('vehicle_status')
                   ->orWhereNotIn('vehicle_status', ['Despatch', 'Cancelled']);
