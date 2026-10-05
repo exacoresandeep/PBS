@@ -75,16 +75,16 @@ return [
         'sap_hana' => [
 		'driver'   => 'odbc',
 		 'dsn'      => env('DB_SAP_DSN', 'HANAODBC'),  // Make sure the DSN name is correct
-    'username' => env('DB_SAP_USERNAME', 'INDUS'),
-    'password' => env('DB_SAP_PASSWORD', 'Indus@123'),
-      //      'dsn'      => env('DB_SAP_DSN'),
+        'username' => env('DB_SAP_USERNAME', 'INDUS'),
+        'password' => env('DB_SAP_PASSWORD', 'Indus@123'),
+        //      'dsn'      => env('DB_SAP_DSN'),
             'database' => env('DB_SAP_DATABASE'),
           //  'username' => env('DB_SAP_USERNAME'),
            // 'password' => env('DB_SAP_PASSWORD'),
             'charset'  => 'utf8',
 	    'prefix'   => '',
 	    'ConnectionTimeout' => 30,
-    'LoginTimeout' => 30,
+        'LoginTimeout' => 30,
         ],
 
         'mariadb' => [

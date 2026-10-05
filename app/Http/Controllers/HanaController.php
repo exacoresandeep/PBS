@@ -83,7 +83,7 @@ class HanaController extends Controller
 
         $invoiceNumber = $request->invoice_number;
        // $invoiceDate   = Carbon::parse($request->invoice_date)->format('Ymd');
-$invoiceDate = Carbon::createFromFormat('d/m/Y', $request->invoice_date)
+            $invoiceDate = Carbon::createFromFormat('d/m/Y', $request->invoice_date)
                     ->format('Ymd');
         try {
             $conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
@@ -125,8 +125,8 @@ $invoiceDate = Carbon::createFromFormat('d/m/Y', $request->invoice_date)
             }
 
             $first = $rows[0];
-$branches = [];
- $cgstSum = 0;
+        $branches = [];
+        $cgstSum = 0;
             $sgstSum = 0;
             $igstSum = 0;
             $tcsSum  = 0;
@@ -266,7 +266,7 @@ $branches = [];
                 'data'       => [
                     'invoice' => $invoice,
 		    'items'   => $items,
-	//	    "rowresult" => $rows
+	    //	    "rowresult" => $rows
                 ]
             ]);
 
@@ -298,144 +298,8 @@ $branches = [];
 
         return $words . ' only';
     }
-public function getCreditNoteForInvoiceOld(Request $request)
-    {
- $date           = $request->input('date');
-    $credit_note_no = $request->input('credit_note_no');
 
-    if (empty($credit_note_no)) {
-        return response()->json([
-            'status'  => 'error',
-            'code'    => 400,
-            'message' => 'Credit Note No is required',
-        ], 400);
-    }
-
-    if (empty($date)) {
-        return response()->json([
-            'status'  => 'error',
-            'code'    => 400,
-            'message' => 'Date parameter is required',
-        ], 400);
-    }
-
-    // Convert dd/mm/yyyy → yyyymmdd (SAP HANA safe)
-    $dateParts = explode('/', $date);
-    if (count($dateParts) !== 3) {
-        return response()->json([
-            'status'  => 'error',
-            'code'    => 400,
-            'message' => 'Invalid date format, expected dd/mm/YYYY',
-        ], 400);
-    }
-
-    $date = $dateParts[2] . $dateParts[1] . $dateParts[0]; // 20210728
-
-    $conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
-    if (!$conn) {
-        return response()->json([
-            'status'  => 'error',
-            'code'    => 500,
-            'message' => 'ODBC Connection Failed',
-        ], 500);
-    }
-
-    try {
-        // ✅ FIXED: credit note quoted + date format corrected
-        $sql = 'CALL "PRABHU_NEW"."MobileApp_CreditNote_New_Param_v2"('
-             . '\'' . $credit_note_no . '\', '
-             . '\'' . $date . '\')';
-
-        $result = odbc_exec($conn, $sql);
-
-        $items = [];
-        $data  = [];
-
-        while ($row = odbc_fetch_array($result)) {
-            $row = array_map('trim', $row);
-            $data[] = $row;
-
-            $quantity   = (float)$row["Quantity"] ?: 1;
-            $unitTotal  = (float)$row["UnitPrice"] * $quantity;
-            $lineTotal  = $unitTotal
-                        + (float)$row["CGSTAmount"]
-                        + (float)$row["SGSTAmount"]
-                        + (float)$row["IGSTAmount"];
-
-            $items[] = [
-                "item_code"   => $row["ItemCode"],
-                "item_name"   => $row["ItemName"],
-                "quantity"    => (float)$row["Quantity"],
-                "unit_price"  => (float)$row["UnitPrice"],
-                "unit_total"  => $unitTotal,
-                "line_total"  => $lineTotal,
-                "cgst_rate"   => (float)$row["CGSTRate"],
-                "cgst_amount" => (float)$row["CGSTAmount"],
-                "sgst_rate"   => (float)$row["SGSTRate"],
-                "sgst_amount" => (float)$row["SGSTAmount"],
-                "igst_rate"   => (float)$row["IGSTRate"],
-                "igst_amount" => (float)$row["IGSTAmount"],
-            ];
-        }
-
-        if (empty($data)) {
-            return response()->json([
-                'status'  => 'success',
-                'code'    => 200,
-                'message' => 'No credit notes found.',
-                'data'    => [],
-            ], 200);
-        }
-
-        $first = $data[0];
-
-        // Totals
-        $subTotal  = array_sum(array_column($items, 'unit_total'));
-        $cgstTotal = array_sum(array_column($items, 'cgst_amount'));
-        $sgstTotal = array_sum(array_column($items, 'sgst_amount'));
-        $igstTotal = array_sum(array_column($items, 'igst_amount'));
-
-        $grossTotal = $subTotal + $cgstTotal + $sgstTotal + $igstTotal;
-
-        $roundedTotal = ($grossTotal - floor($grossTotal) >= 0.5)
-            ? ceil($grossTotal)
-            : floor($grossTotal);
-
-        $roundOff = $roundedTotal - $grossTotal;
-
-        $f = new \NumberFormatter("en", \NumberFormatter::SPELLOUT);
-        $amountInWords = ucfirst($f->format($roundedTotal)) . " only";
-
-        return response()->json([
-            'status'  => 'success',
-            'code'    => 200,
-            'message' => 'Credit notes fetched successfully.',
-            'data'    => [
-                "items"   => $items,
-                "summary" => [
-                    "sub_total"       => round($subTotal, 2),
-                    "cgst_total"      => round($cgstTotal, 2),
-                    "sgst_total"      => round($sgstTotal, 2),
-                    "igst_total"      => round($igstTotal, 2),
-                    "gross_total"     => round($grossTotal, 2),
-                    "round_off"       => round($roundOff, 2),
-                    "total"           => number_format($roundedTotal, 2, '.', ''),
-                    "amount_in_words" => $amountInWords,
-                    "remarks"         => $first["Remarks"] ?? null,
-                ]
-            ]
-        ], 200);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status'  => 'error',
-            'code'    => 500,
-            'message' => 'Something went wrong: ' . $e->getMessage(),
-        ], 500);
-    }    
-}
-
-public function getCreditNoteForInvoice(Request $request)
+    public function getCreditNoteForInvoice(Request $request)
     {
         $date = $request->input('date');
         $credit_note_no = $request->input('credit_note_no');
