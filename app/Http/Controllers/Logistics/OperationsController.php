@@ -48,7 +48,7 @@ class OperationsController extends Controller
                
                 ->orWhere(function ($subQuery) {
                     $subQuery->whereHas('createdBy', function ($employeeQuery) {
-                        $employeeQuery->whereIn('employee_type_id', [2, 3, 4, 5]);
+                        $employeeQuery->whereIn('employee_type_id', [2, 3, 4, 5, 7]);
                     })->where('dealer_flag_order', '!=', '1') 
                     ->where(function ($sourceQuery) {
                         $sourceQuery->whereNull('source')
