@@ -23,6 +23,22 @@ use App\Http\Controllers\Logistics\InspectionController;
 use App\Http\Controllers\Logistics\TyreManagementController;
 use App\Http\Controllers\ExpenseController;
 
+Route::get('/debug-hana-driver', function () {
+    $driver = '/opt/sap/hdbclient/libodbcHDB.so';
+
+    return response()->json([
+        'sapi' => PHP_SAPI,
+        'php_ini' => php_ini_loaded_file(),
+        'driver_exists' => file_exists($driver),
+        'driver_readable' => is_readable($driver),
+        'driver_realpath' => realpath($driver) ?: null,
+        'ld_library_path' => getenv('LD_LIBRARY_PATH') ?: null,
+        'odbcini' => getenv('ODBCINI') ?: null,
+        'odbcsysini' => getenv('ODBCSYSINI') ?: null,
+        'driver_config' => @file_get_contents('/etc/odbcinst.ini'),
+        'dsn_config' => @file_get_contents('/etc/odbc.ini'),
+    ]);
+});
 Route::get('/debug-hana-connection', function () {
     $driver = '/home/pbs/sap/hdbclient/libodbcHDB.so';
 
