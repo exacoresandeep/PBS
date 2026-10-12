@@ -155,12 +155,7 @@
                     Lead Management<span class="icon-right"></span>
                 </a>
             </li>
-            <li>
-                <a class="menu-title"  href="{{ route('sales.order.management') }}">
-                    <i class="fa fa-hourglass-end" aria-hidden="true"></i>
-                    Sales Order Management <span class="icon-right"></span>
-                </a>
-            </li>
+            
             <li>
                 <a class="menu-title">
                     <i class="fa fa-map-marker" aria-hidden="true"></i>

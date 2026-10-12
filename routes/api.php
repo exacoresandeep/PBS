@@ -23,6 +23,29 @@ use App\Http\Controllers\Logistics\InspectionController;
 use App\Http\Controllers\Logistics\TyreManagementController;
 use App\Http\Controllers\ExpenseController;
 
+Route::get('/debug-hana-connection', function () {
+    $conn = @odbc_connect(
+        'HANAODBC',
+        'INDUS',
+        'Indus@123'
+    );
+
+    $error = $conn ? null : odbc_errormsg();
+
+    if ($conn) {
+        odbc_close($conn);
+    }
+
+    return response()->json([
+        'connected' => $conn !== false,
+        'sapi' => PHP_SAPI,
+        'php_version' => PHP_VERSION,
+        'php_ini' => php_ini_loaded_file(),
+        'odbc_loaded' => extension_loaded('odbc'),
+        'error' => $error,
+    ], $conn ? 200 : 500);
+});
+
 Route::middleware('api.maintenance')->group(function () {
 Route::post('/sap/outstanding', [\App\Http\Controllers\SAPController::class, 'fetchOutstanding']);
 Route::post('/sap/downloadLedger', [\App\Http\Controllers\SAPController::class, 'downloadLedger']);
