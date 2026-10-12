@@ -24,6 +24,21 @@ use App\Http\Controllers\Logistics\TyreManagementController;
 use App\Http\Controllers\ExpenseController;
 
 Route::get('/debug-hana-connection', function () {
+    $driver = '/home/pbs/sap/hdbclient/libodbcHDB.so';
+
+$diagnostics = [
+    'sapi' => PHP_SAPI,
+    'driver_exists' => file_exists($driver),
+    'driver_is_file' => is_file($driver),
+    'driver_readable' => is_readable($driver),
+    'driver_realpath' => realpath($driver) ?: null,
+    'ld_library_path' => getenv('LD_LIBRARY_PATH') ?: null,
+    'odbcini' => getenv('ODBCINI') ?: null,
+    'odbcsysini' => getenv('ODBCSYSINI') ?: null,
+    'alternate_driver_exists' => file_exists(
+        '/opt/sap/hdbclient/libodbcHDB.so'
+    ),
+];
     $conn = @odbc_connect(
         'HANAODBC',
         'INDUS',
