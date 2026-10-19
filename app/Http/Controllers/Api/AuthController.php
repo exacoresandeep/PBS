@@ -1882,8 +1882,8 @@ public function getDealerVisitCustomerTypes()
                 )
                 ->join('products_details', 'products_details.type_id', '=', 'product_types.id')
                 ->where('product_types.product_id', $productId)
-		->where('products_details.availability_status', 'Available')
-	->where('products_details.status', 'Active')
+		        ->where('products_details.availability_status', 'Available')
+	            ->where('products_details.status', 'Active')
                 ->groupBy(
                     'product_types.product_id',
                     'product_types.id',

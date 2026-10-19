@@ -256,7 +256,7 @@ class OperationsController extends Controller
                
                 ->orWhere(function ($subQuery) {
                     $subQuery->whereHas('createdBy', function ($employeeQuery) {
-                        $employeeQuery->whereIn('employee_type_id', [2, 3, 4, 5]);
+                        $employeeQuery->whereIn('employee_type_id', [2, 3, 4, 5, 7]);
                     })->where('dealer_flag_order', '!=', '1') 
                     ->where(function ($sourceQuery) {
                         $sourceQuery->whereNull('source')
@@ -318,7 +318,7 @@ class OperationsController extends Controller
 
         // $orders->latest();
             return DataTables::of($orders)
-->filter(function ($query) use ($request) {
+            ->filter(function ($query) use ($request) {
                 if ($search = $request->get('search')['value'] ?? false) {
 
                     $query->where(function ($q) use ($search) {
@@ -628,7 +628,7 @@ class OperationsController extends Controller
 
                 ->orWhere(function ($subQuery) {
                     $subQuery->whereHas('createdBy', function ($employeeQuery) {
-                        $employeeQuery->whereIn('employee_type_id', [2, 3, 4, 5]);
+                        $employeeQuery->whereIn('employee_type_id', [2, 3, 4, 5, 7]);
                     })
                     ->where('dealer_flag_order', '!=', '1')
                     ->where(function ($sourceQuery) {
@@ -782,7 +782,7 @@ class OperationsController extends Controller
 
                 ->orWhere(function ($subQuery) {
                     $subQuery->whereHas('createdBy', function ($employeeQuery) {
-                        $employeeQuery->whereIn('employee_type_id', [2, 3, 4, 5]);
+                        $employeeQuery->whereIn('employee_type_id', [2, 3, 4, 5, 7]);
                     })
                     ->where('dealer_flag_order', '!=', '1')
                     ->where(function ($sourceQuery) {
@@ -865,10 +865,10 @@ class OperationsController extends Controller
                     'Yard Status'    => $order->vehicle_status ?? '-',
                     'Scheme'         => $order->scheme ?? '-',
 
-    'Order Type'         => $order->orderType->name ?? '-',
+                    'Order Type'         => $order->orderType->name ?? '-',
                     'Payment Type'         => $order->paymentTerm->name ?? '-',///$order->order_payment_terms ?? '-',
                     'Billing Date'         => $order->billing_date ?? '-',
-                'Quantity' => number_format($totalQuantity, 2, '.', ''),
+                    'Quantity' => number_format($totalQuantity, 2, '.', ''),
                     'Amount'   => number_format($order->total_amount, 2),
 
                     'Status' => match ($order->order_approved) {
@@ -908,10 +908,10 @@ class OperationsController extends Controller
                         'Driver Name',
                         'Yard Status',
                         'Scheme',
-    'Order Type',
+                        'Order Type',
                         'Payment Type',
-			'Billing Date',
-    			'Quantity',
+			            'Billing Date',
+    			        'Quantity',
                         'Amount',
                         'Status',
                     ];
