@@ -352,6 +352,15 @@ class HanaController extends Controller
         $conn = odbc_connect(
             'Driver=/opt/sap/hdbclient/libodbcHDB.so;ServerNode=192.168.0.9:30015',
             'INDUS', 'Indus@123');
+        Log::info('HANA Apache runtime check', [
+        'sapi' => PHP_SAPI,
+        'php_version' => PHP_VERSION,
+        'odbc_loaded' => extension_loaded('odbc'),
+        'php_ini' => php_ini_loaded_file(),
+        'ld_library_path' => getenv('LD_LIBRARY_PATH') ?: '(not set)',
+        'driver_exists' => file_exists('/opt/sap/hdbclient/libodbcHDB.so'),
+        'driver_readable' => is_readable('/opt/sap/hdbclient/libodbcHDB.so'),
+    ]);
         if (!$conn) {
             return response()->json([
                 'status'  => 'error',
@@ -371,7 +380,7 @@ class HanaController extends Controller
                 $error = odbc_errormsg($conn);
                 odbc_close($conn);
 
-                \Log::error('SAP HANA credit note procedure failed', [
+                Log::error('SAP HANA credit note procedure failed', [
                     'error' => $error,
                 ]);
 
