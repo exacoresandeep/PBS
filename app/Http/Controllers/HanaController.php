@@ -349,10 +349,7 @@ class HanaController extends Controller
         $date = $dateParts[2] . $dateParts[1] . $dateParts[0]; // 20210728
 
         //$conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
-        $conn = odbc_connect(
-            'Driver=/opt/sap/hdbclient/libodbcHDB.so;ServerNode=192.168.0.9:30015',
-            'INDUS', 'Indus@123');
-        Log::info('HANA Apache runtime check', [
+         Log::info('HANA Apache runtime check', [
         'sapi' => PHP_SAPI,
         'php_version' => PHP_VERSION,
         'odbc_loaded' => extension_loaded('odbc'),
@@ -361,6 +358,10 @@ class HanaController extends Controller
         'driver_exists' => file_exists('/opt/sap/hdbclient/libodbcHDB.so'),
         'driver_readable' => is_readable('/opt/sap/hdbclient/libodbcHDB.so'),
     ]);
+        $conn = odbc_connect(
+            'Driver=/opt/sap/hdbclient/libodbcHDB.so;ServerNode=192.168.0.9:30015',
+            'INDUS', 'Indus@123');
+       
         if (!$conn) {
             return response()->json([
                 'status'  => 'error',
