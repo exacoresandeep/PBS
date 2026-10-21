@@ -358,7 +358,6 @@ class HanaController extends Controller
         'driver_exists' => file_exists('/opt/sap/hdbclient/libodbcHDB.so'),
         'driver_readable' => is_readable('/opt/sap/hdbclient/libodbcHDB.so'),
     ]);
-    dd($date);
         $conn = odbc_connect(
             'Driver=/opt/sap/hdbclient/libodbcHDB.so;ServerNode=192.168.0.9:30015',
             'INDUS', 'Indus@123');
