@@ -348,7 +348,10 @@ class HanaController extends Controller
 
         $date = $dateParts[2] . $dateParts[1] . $dateParts[0]; // 20210728
 
-        $conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
+        //$conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
+        $conn = odbc_connect(
+            'Driver=/opt/sap/hdbclient/libodbcHDB.so;ServerNode=192.168.0.9:30015',
+            'INDUS', 'Indus@123');
         if (!$conn) {
             return response()->json([
                 'status'  => 'error',
