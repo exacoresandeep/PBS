@@ -4,11 +4,26 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use PDO;
+use Illuminate\Support\Facades\Log;
 use PDOException;
 use Carbon\Carbon;
 class HanaController extends Controller
 {
     private function connectToHana()
+    {
+        $conn = @odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
+
+        if (!$conn) {
+            // \Log::error('SAP HANA ODBC connection failed', [
+            //     'error' => odbc_errormsg(),
+            // ]);
+
+            return null;
+        }
+
+        return $conn;
+    }
+    private function connectToHanaOld()
     {
         $dsn = 'odbc:HANAODBC';
         $username = 'INDUS';
@@ -51,6 +66,7 @@ class HanaController extends Controller
     {
         try {
             $pdo = $this->connectToHana();
+            
             if (!($pdo instanceof PDO)) {
                 return $pdo; // Return the error response if connection fails
             }
@@ -348,7 +364,20 @@ class HanaController extends Controller
                 . '\'' . $date . '\')';
 
             $result = odbc_exec($conn, $sql);
+            if (!$result) {
+                $error = odbc_errormsg($conn);
+                odbc_close($conn);
 
+                \Log::error('SAP HANA credit note procedure failed', [
+                    'error' => $error,
+                ]);
+
+                return response()->json([
+                    'status'  => 'error',
+                    'code'    => 500,
+                    'message' => 'Failed to fetch credit note data.',
+                ], 500);
+            }
             $items = [];
             $data  = [];
 
