@@ -347,6 +347,10 @@ class HanaController extends Controller
         }
 
         $date = $dateParts[2] . $dateParts[1] . $dateParts[0]; // 20210728
+        return response()->json([
+            'debug_marker' => 'PBS_HANA_CONTROLLER_CHECK_20261021',
+            'controller' => __METHOD__,
+        ]);
         file_put_contents(
             '/tmp/pbs_hana_debug.log',
             date('c') . ' Reached ODBC connection' . PHP_EOL,
