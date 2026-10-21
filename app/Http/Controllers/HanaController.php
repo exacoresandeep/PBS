@@ -348,54 +348,11 @@ class HanaController extends Controller
 
         $date = $dateParts[2] . $dateParts[1] . $dateParts[0]; // 20210728
         
-        $driver = '/opt/sap/hdbclient/libodbcHDB.so';
-
-        $diagnostics = [
-            'time' => date('c'),
-            'sapi' => PHP_SAPI,
-            'php_version' => PHP_VERSION,
-            'php_ini' => php_ini_loaded_file(),
-            'odbc_loaded' => extension_loaded('odbc'),
-            'driver_exists' => file_exists($driver),
-            'driver_readable' => is_readable($driver),
-            'ld_library_path' => getenv('LD_LIBRARY_PATH') ?: '(not set)',
-        ];
-
-        \Illuminate\Support\Facades\Log::error(
-            'PBS_HANA_APACHE_DIAGNOSTICS',
-            $diagnostics
-        );
-
-        try {
-            $conn = odbc_connect(
-                'Driver=' . $driver .
-                ';ServerNode=192.168.0.9:30015;Database=PRABHU_NEW',
-                'INDUS',
-                'Indus@123'
-            );
-
-            if (!$conn) {
-                throw new \RuntimeException(odbc_errormsg());
-            }
-
-            \Illuminate\Support\Facades\Log::info(
-                'PBS_HANA_ODBC_CONNECT_SUCCESS'
-            );
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error(
-                'PBS_HANA_ODBC_CONNECT_FAILED',
-                [
-                    'exception' => get_class($e),
-                    'message' => $e->getMessage(),
-                    'diagnostics' => $diagnostics,
-                ]
-            );
-
-            throw $e;
-        }
         $conn = odbc_connect(
-            'Driver=/opt/sap/hdbclient/libodbcHDB.so;ServerNode=192.168.0.9:30015',
-            'INDUS', 'Indus@123');
+            'HANAODBC',
+            'INDUS',
+            'Indus@123',
+        );
        
         if (!$conn) {
             return response()->json([
