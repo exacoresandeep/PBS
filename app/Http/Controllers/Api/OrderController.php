@@ -147,6 +147,7 @@ class OrderController extends Controller
                 'latitude' => 'required|string',
                 'longitude' => 'required|string',
                 
+                
             ];
  
             if ($employee->employee_type_id != 1) {

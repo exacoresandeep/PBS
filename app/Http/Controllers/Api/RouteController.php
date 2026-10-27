@@ -1281,7 +1281,7 @@ class RouteController extends Controller
                     'type'        => 'dealer',
                     'title'       => 'Dealer Visit',
                     'description' => $visit->dealer->dealer_name ?? 'Dealer Visit',
-                    'time'        => $visit->created_at,
+                    'time'        => Carbon::parse($visit->created_at)->format('h:i A'),
                 ];
             }
 
