@@ -1447,7 +1447,8 @@ public function fetchTotalOrder(Request $request)
     {
         try {
            
-            $conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
+            // $conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
+            $conn = odbc_connect('DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB', 'INDUS', 'Indus@123');
 
             if (!$conn) {
                 return response()->json([

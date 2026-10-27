@@ -190,7 +190,7 @@ class DealerController extends Controller
             $fyStart = $year . '0401';
             $today = Carbon::now()->format('Ymd');
 
-            $conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
+            $conn = odbc_connect('DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB', 'INDUS', 'Indus@123');
             if (!$conn) {
                 return response()->json(['error' => 'SAP Connection Failed: ' . odbc_errormsg()], 500);
             }
@@ -303,7 +303,7 @@ class DealerController extends Controller
             $fyStart = $year . '0401';
             $today = Carbon::now()->format('Ymd');
 
-            $conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
+            $conn = odbc_connect('DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB', 'INDUS', 'Indus@123');
             if (!$conn) {
                 return response()->json(['error' => 'SAP Connection Failed: ' . odbc_errormsg()], 500);
             }
@@ -402,7 +402,7 @@ class DealerController extends Controller
             $today = Carbon::now()->format('Ymd');
 
             $sap_id= Product::where("id",$request->product_id)->value("sap_id");
-            $conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
+            $conn = odbc_connect('DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB', 'INDUS', 'Indus@123');
             if (!$conn) {
                 return response()->json(['error' => 'SAP Connection Failed: ' . odbc_errormsg()], 500);
             }

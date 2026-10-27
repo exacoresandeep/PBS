@@ -102,7 +102,7 @@ class HanaController extends Controller
             $invoiceDate = Carbon::createFromFormat('d/m/Y', $request->invoice_date)
                     ->format('Ymd');
         try {
-            $conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
+            $conn = odbc_connect('DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB', 'INDUS', 'Indus@123');
 
             if (!$conn) {
                 return response()->json([
@@ -349,7 +349,7 @@ class HanaController extends Controller
         $date = $dateParts[2] . $dateParts[1] . $dateParts[0]; // 20210728
         
         $conn = odbc_connect(
-            'HANAODBC',
+            'DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB',
             'INDUS',
             'Indus@123',
         );

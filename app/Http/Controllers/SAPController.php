@@ -12,7 +12,7 @@ class SAPController extends Controller
     $toDate   = $request->to_date;   // format: Ymd
     $sapId    = $request->sap_id;
 
-    $conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
+    $conn = odbc_connect('DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB', 'INDUS', 'Indus@123');
 
     if (!$conn) {
         return response()->json([
@@ -50,7 +50,7 @@ class SAPController extends Controller
 }
 private function callSapProcedure($procedure, array $params)
     {
-        $conn = odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
+        $conn = odbc_connect('DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB', 'INDUS', 'Indus@123');
 
         if (!$conn) {
             throw new \Exception('SAP Connection Failed: ' . odbc_errormsg());
