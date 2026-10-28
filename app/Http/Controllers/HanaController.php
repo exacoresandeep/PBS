@@ -355,10 +355,17 @@ class HanaController extends Controller
         );
        
         if (!$conn) {
+            $error = odbc_errormsg();
+
+            Log::error('SAP HANA ODBC connection failed', [
+                'error' => $error,
+                'controller' => __METHOD__,
+            ]);
+
             return response()->json([
                 'status'  => 'error',
                 'code'    => 500,
-                'message' => 'ODBC Connection Failed',
+                'message' => 'SAP HANA connection failed.',
             ], 500);
         }
 
