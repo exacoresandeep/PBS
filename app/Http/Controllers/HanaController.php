@@ -348,24 +348,24 @@ class HanaController extends Controller
 
         $date = $dateParts[2] . $dateParts[1] . $dateParts[0]; // 20210728
         
-        $conn = odbc_connect(
-            // 'DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB',
+        $conn = @odbc_connect(
             'HANAODBC',
             'INDUS',
-            'Indus@123',
+            'Indus@123'
         );
-       
-        if (!$conn) {
-            $error = odbc_errormsg();
 
+        if (!$conn) {
             Log::error('SAP HANA ODBC connection failed', [
-                'error' => $error,
-                'controller' => __METHOD__,
+                'error' => odbc_errormsg(),
+                'odbc_state' => odbc_error(),
+                'sapi' => PHP_SAPI,
+                'odbcini' => getenv('ODBCINI'),
+                'odbc_sysini' => getenv('ODBCSYSINI'),
             ]);
 
             return response()->json([
-                'status'  => 'error',
-                'code'    => 500,
+                'status' => 'error',
+                'code' => 500,
                 'message' => 'SAP HANA connection failed.',
             ], 500);
         }
