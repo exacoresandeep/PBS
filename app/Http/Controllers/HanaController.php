@@ -349,7 +349,8 @@ class HanaController extends Controller
         $date = $dateParts[2] . $dateParts[1] . $dateParts[0]; // 20210728
         
         $conn = odbc_connect(
-            'DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB',
+            // 'DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB',
+            'HANAODBC',
             'INDUS',
             'Indus@123',
         );
