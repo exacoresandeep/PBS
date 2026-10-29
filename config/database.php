@@ -122,6 +122,11 @@ return [
             'sslmode' => 'prefer',
         ],
 
+        'hana' => [
+                'dsn' => env('HANA_DSN', 'HANAODBC'),
+                'username' => env('HANA_USERNAME'),
+                'password' => env('HANA_PASSWORD'),
+            ],
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),

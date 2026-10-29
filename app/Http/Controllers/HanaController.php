@@ -347,36 +347,31 @@ class HanaController extends Controller
         }
 
         $date = $dateParts[2] . $dateParts[1] . $dateParts[0]; // 20210728
-        Log::info('HANA Apache diagnostic', [
-            'sapi' => PHP_SAPI,
-            'user' => function_exists('posix_geteuid') ? posix_geteuid() : 'unknown',
-            'LD_LIBRARY_PATH' => getenv('LD_LIBRARY_PATH') ?: '(empty)',
-            'ODBCINI' => getenv('ODBCINI') ?: '(empty)',
-            'ODBCSYSINI' => getenv('ODBCSYSINI') ?: '(empty)',
-            'driver_readable' => is_readable('/opt/sap/hdbclient/libodbcHDB.so'),
-            'driver_realpath' => realpath('/opt/sap/hdbclient/libodbcHDB.so') ?: '(false)',
-        ]);
+        putenv('ODBCINI=/etc/odbc.ini');
+        putenv('ODBCSYSINI=/etc');
+
         $conn = @odbc_connect(
             'HANAODBC',
-            'INDUS',
-            'Indus@123'
+            config('database.connections.hana.username'),
+            config('database.connections.hana.password')
         );
 
         if (!$conn) {
+            $error = odbc_errormsg();
+
             Log::error('SAP HANA ODBC connection failed', [
-                'error' => odbc_errormsg(),
+                'error' => $error,
                 'odbc_state' => odbc_error(),
                 'sapi' => PHP_SAPI,
-                'odbcini' => getenv('ODBCINI'),
-                'odbc_sysini' => getenv('ODBCSYSINI'),
             ]);
 
             return response()->json([
-                'status' => 'error',
-                'code' => 500,
+                'status'  => 'error',
+                'code'    => 500,
                 'message' => 'SAP HANA connection failed.',
             ], 500);
         }
+        
 
         try {
             // ✅ FIXED: credit note quoted + date format corrected
