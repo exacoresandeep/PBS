@@ -347,7 +347,15 @@ class HanaController extends Controller
         }
 
         $date = $dateParts[2] . $dateParts[1] . $dateParts[0]; // 20210728
-        
+        Log::info('HANA Apache diagnostic', [
+            'sapi' => PHP_SAPI,
+            'user' => function_exists('posix_geteuid') ? posix_geteuid() : 'unknown',
+            'LD_LIBRARY_PATH' => getenv('LD_LIBRARY_PATH') ?: '(empty)',
+            'ODBCINI' => getenv('ODBCINI') ?: '(empty)',
+            'ODBCSYSINI' => getenv('ODBCSYSINI') ?: '(empty)',
+            'driver_readable' => is_readable('/opt/sap/hdbclient/libodbcHDB.so'),
+            'driver_realpath' => realpath('/opt/sap/hdbclient/libodbcHDB.so') ?: '(false)',
+        ]);
         $conn = @odbc_connect(
             'HANAODBC',
             'INDUS',
