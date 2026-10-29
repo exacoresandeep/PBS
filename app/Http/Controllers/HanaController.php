@@ -352,8 +352,8 @@ class HanaController extends Controller
 
         $conn = @odbc_connect(
             'HANAODBC',
-            config('database.connections.hana.username'),
-            config('database.connections.hana.password')
+            config('database.connections.sap_hana.username'),
+            config('database.connections.sap_hana.password')
         );
 
         if (!$conn) {
@@ -367,7 +367,7 @@ class HanaController extends Controller
 
             return response()->json([
                 'status'  => 'error',
-                'code'    => 501,
+                'code'    => 500,
                 'message' => 'SAP HANA connection failed.',
             ], 500);
         }
