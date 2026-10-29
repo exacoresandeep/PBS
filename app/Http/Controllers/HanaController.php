@@ -367,7 +367,7 @@ class HanaController extends Controller
 
             return response()->json([
                 'status'  => 'error',
-                'code'    => 500,
+                'code'    => 501,
                 'message' => 'SAP HANA connection failed.',
             ], 500);
         }
