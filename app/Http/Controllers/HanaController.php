@@ -347,43 +347,20 @@ class HanaController extends Controller
         }
 
         $date = $dateParts[2] . $dateParts[1] . $dateParts[0]; // 20210728
-        putenv('ODBCINI=/etc/odbc.ini');
-        putenv('ODBCSYSINI=/etc');
-
-        $conn = @odbc_connect(
-            'HANAODBC',
-            config('database.connections.sap_hana.username'),
-            config('database.connections.sap_hana.password')
-        );
-
-        if (!$conn) {
-            $error = odbc_errormsg();
-            $state = odbc_error();
-            Log::error('SAP HANA ODBC connection failed', [
-                'error' => $error,
-                'odbc_state' => $state,
-                'sapi' => PHP_SAPI,
-                'dsn' => config('database.connections.sap_hana.dsn'),
-                'username' => config('database.connections.sap_hana.username'),
-                'password_configured' => !empty(
-                    config('database.connections.sap_hana.password')
-                ),
-                'odbcini' => getenv('ODBCINI'),
-                'odbc_sysini' => getenv('ODBCSYSINI'),
-            ]);
-
-            return response()->json([
-                'status' => 'error',
-                'code' => 500,
-                'message' => 'SAP HANA connection failed.',
-                'debug' => app()->environment('local') ? $error : null,
-            ], 500);
-
-            
-        }
-        
+               
 
         try {
+
+
+            $conn = new PDO(
+                'odbc:HANAODBC',
+                'INDUS',
+                'Indus@123',
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                ]
+            );
             // ✅ FIXED: credit note quoted + date format corrected
             $sql = 'CALL "PRABHU_NEW"."MobileApp_CreditNote_New_Param_v2"('
                 . '\'' . $credit_note_no . '\', '
