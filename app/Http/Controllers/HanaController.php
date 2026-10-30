@@ -9,19 +9,15 @@ use PDOException;
 use Carbon\Carbon;
 class HanaController extends Controller
 {
-    private function connectToHana()
+    private function connectToHana(): PDO
     {
-        $conn = @odbc_connect('HANAODBC', 'INDUS', 'Indus@123');
-
-        if (!$conn) {
-            // \Log::error('SAP HANA ODBC connection failed', [
-            //     'error' => odbc_errormsg(),
-            // ]);
-
-            return null;
-        }
-
-        return $conn;
+        return new PDO(
+            'odbc:HANAODBC','INDUS','Indus@123',
+            [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]
+        );
     }
     private function connectToHanaOld()
     {
@@ -63,6 +59,37 @@ class HanaController extends Controller
     }
 
     private function executeProcedure($query)
+    {
+        try {
+            $pdo = $this->connectToHana();
+
+            $stmt = $pdo->prepare($query);
+            $stmt->execute();
+
+            $response = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return response()->json([
+                'success' => true,
+                'statusCode' => 200,
+                'message' => 'Data fetched successfully',
+                'data' => $response
+            ]);
+
+        } catch (\Throwable $e) {
+
+            Log::error('SAP HANA procedure failed', [
+                'error' => $e->getMessage(),
+                'query' => $query,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'statusCode' => 500,
+                'message' => 'SAP HANA query failed',
+            ], 500);
+        }
+    }
+    private function executeProcedureOld($query)
     {
         try {
             $pdo = $this->connectToHana();

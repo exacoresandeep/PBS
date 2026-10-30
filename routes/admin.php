@@ -330,3 +330,26 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
         Route::get('/overview', [RouteController::class, 'overview'])->name('tracking.overview');
         Route::post('/overviewDetials', [RouteController::class, 'overviewDetials'])->name('tracking.overviewDetials');
     });
+    Route::get('/test-hana-pdo', function () {
+        try {
+            $pdo = new PDO(
+                'odbc:HANAODBC',
+                'INDUS',
+                'Indus@123',
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
+
+            return response()->json([
+                'success' => true,
+                'user' => $pdo->query(
+                    'SELECT CURRENT_USER FROM DUMMY'
+                )->fetchColumn(),
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    });
