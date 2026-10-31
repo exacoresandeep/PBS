@@ -30,3 +30,17 @@ Route::post('/set-product', function (\Illuminate\Http\Request $request) {
 Route::get('/sales/getEmployeesAjax', [AttendanceController::class, 'getEmployeesAjax'])->name('sales.getEmployeesAjax');
 
 require __DIR__.'/admin.php';
+Route::get('/hana-test-environment', function () {
+    return response()->json([
+        'sapi' => PHP_SAPI,
+        'php_version' => PHP_VERSION,
+        'php_ini' => php_ini_loaded_file(),
+        'odbc' => extension_loaded('odbc'),
+        'pdo_odbc' => extension_loaded('pdo_odbc'),
+        'odbc_connect' => function_exists('odbc_connect'),
+        'ld_library_path' => getenv('LD_LIBRARY_PATH'),
+        'odbcini' => getenv('ODBCINI'),
+        'odbcsysini' => getenv('ODBCSYSINI'),
+        'home' => getenv('HOME'),
+    ]);
+});

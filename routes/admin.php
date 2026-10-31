@@ -177,8 +177,8 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
             Route::get('/', [AccountsController::class, 'index'])->name('accounts.orders.index');
             Route::get('/list', [AccountsController::class, 'orderList'])->name('accounts.orders.list');
             Route::get('/view/{id}', [AccountsController::class, 'viewOrder'])->name('view'); 
-	    Route::post('/approve/{id}', [AccountsController::class, 'approveOrderNew'])->name('accounts.orders.approve');
-	    Route::post('/approveNew/{id}', [AccountsController::class, 'approveOrderNew'])->name('accounts.orders.approvenew');
+            Route::post('/approve/{id}', [AccountsController::class, 'approveOrderNew'])->name('accounts.orders.approve');
+            Route::post('/approveNew/{id}', [AccountsController::class, 'approveOrderNew'])->name('accounts.orders.approvenew');
             Route::post('/reject/{id}', [AccountsController::class, 'rejectOrder'])->name('accounts.orders.reject');
             Route::get('/export', [AccountsController::class, 'export'])->name('accounts.orders.export');
         });
