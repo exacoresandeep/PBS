@@ -19,6 +19,7 @@ class HanaController extends Controller
             ]
         );
     }
+    
     private function connectToHanaOld()
     {
         $dsn = 'odbc:HANAODBC';

@@ -2886,7 +2886,7 @@ class OrderController extends Controller
                 ], 404);
             }
 
-            $employeeIds = Employee::whereIn('employee_type_id', [2, 3, 4,7])
+            $employeeIds = Employee::whereIn('employee_type_id', [2, 3, 4, 5 ,7])
                 ->pluck('id');
 
             /**
