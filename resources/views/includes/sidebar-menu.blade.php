@@ -341,6 +341,7 @@
                         Dashboard <span class="icon-right"></span>
                     </a>
                 </li>
+                
                 <li>
                     <a class="menu-title">
                         <i class="fa fa-shopping-cart" aria-hidden="true"></i>
@@ -354,6 +355,12 @@
                             <a href="{{ route('operations.orders.index') }}">All Request<span class="icon-right"></span></a>
                         </li>
                     </ul>
+                </li>
+                 <li>
+                    <a class="menu-title" href="{{ route('operations.salesorders.index') }}">
+                        <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+                        Sales Order Management <span class="icon-right"></span>
+                    </a>
                 </li>
                  
             </ul>

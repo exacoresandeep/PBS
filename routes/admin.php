@@ -22,12 +22,12 @@ use App\Http\Controllers\Logistics\VehiclesController;
 use App\Http\Controllers\SchemeController;
 use App\Http\Controllers\Logistics\OperationsController;
 use App\Http\Controllers\UserManagementController;
-
+Route::middleware('api.maintenance')->group(function () {
     Route::get('/', [AdminController::class, 'login'])->name('login');
     Route::post('/doLogin', [AdminController::class, 'doLogin'])->name('doLogin');
 
 
-Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->middleware('auth');
+    Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->middleware('auth');
 
     Route::prefix('sales')->middleware('auth')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('sales.dashboard');
@@ -307,6 +307,7 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
     Route::prefix('operations')->middleware('auth')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('operations.dashboard');
         Route::prefix('orders')->group(function () {
+            Route::get('/salesorders666666666666666666666666666666', [OperationsController::class, 'salesorders'])->name('operations.salesorders.index');
             Route::get('/', [OperationsController::class, 'index'])->name('operations.orders.index');
             Route::get('/new', [OperationsController::class, 'new'])->name('operations.orders.new');
             Route::get('/listNew', [OperationsController::class, 'orderListNew'])->name('operations.orders.listNew');
@@ -330,3 +331,5 @@ Route::post('/logout', [AdminController::class, 'logout'])->name('logout')->midd
         Route::get('/overview', [RouteController::class, 'overview'])->name('tracking.overview');
         Route::post('/overviewDetials', [RouteController::class, 'overviewDetials'])->name('tracking.overviewDetials');
     });
+
+});
