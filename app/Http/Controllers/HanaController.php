@@ -9,7 +9,7 @@ use PDOException;
 use Carbon\Carbon;
 class HanaController extends Controller
 {
-    private function connectToHana(): PDO
+    private function connectToHananew(): PDO
     {
         return new PDO(
             'odbc:HANAODBC','INDUS','Indus@123',
@@ -20,7 +20,7 @@ class HanaController extends Controller
         );
     }
     
-    private function connectToHanaOld()
+    private function connectToHana()
     {
         $dsn = 'odbc:HANAODBC';
         $username = 'INDUS';
@@ -59,7 +59,7 @@ class HanaController extends Controller
         return $this->executeProcedure('CALL "MOBILE_APPLICATION_TEST"."MobileApp_DealersDatas"()');
     }
 
-    private function executeProcedure($query)
+    private function executeProcedureNew($query)
     {
         try {
             $pdo = $this->connectToHana();
@@ -90,7 +90,7 @@ class HanaController extends Controller
             ], 500);
         }
     }
-    private function executeProcedureOld($query)
+    private function executeProcedure($query)
     {
         try {
             $pdo = $this->connectToHana();

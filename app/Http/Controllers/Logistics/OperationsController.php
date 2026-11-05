@@ -9,6 +9,7 @@ use App\Models\Price;
 use App\Models\OutstandingPayment;
 use App\Models\OutstandingNew;
 use App\Models\Dealer;
+use App\Models\District;
 use App\Models\Product;
 use App\Models\ProductType;
 use Illuminate\Http\Request;
@@ -19,10 +20,17 @@ use Maatwebsite\Excel\Facades\Excel;
 class OperationsController extends Controller
 {
     public function salesorders()
-    {
-        return view('operations.orders.index');
+    {     
+        
+        $vehicleTypes = \App\Models\VehicleType::orderBy('vehicle_type_name')->get();
+        $destinations = District::orderBy('name')->get();
+
+        return view('operations.orders.index', compact('vehicleTypes', 'destinations'));
     }
-    public function getSalesOrders(Request $request)
+    public function exportSalesOrders(Request $request){
+
+    }
+    public function getSalesOrdersold(Request $request)
     {
         $orders = Order::with(['dealer', 'dealers', 'orderItems.product'])
             ->whereIn('vehicle_category_id', ['2', '3'])
@@ -84,6 +92,88 @@ class OperationsController extends Controller
                 return '<span class="badge bg-success">Approved</span>';
             })
             ->rawColumns(['checkbox','product_details','status'])
+            ->make(true);
+    }
+    public function getSalesOrders(Request $request)
+    {
+        $query = Order::with(['dealer', 'dealers', 'orderItems.product'])
+            ->whereIn('vehicle_category_id', ['2', '3'])
+            ->where('order_approved', '1')
+            ->whereDate('created_at', '>=', now()->subDays(60));
+
+        // ---- Filters from the top bar ----
+        if ($request->filled('delivery_date')) {
+            $query->whereDate('delivery_date', $request->delivery_date);
+        }
+        if ($request->filled('vehicle_type')) {
+            $query->where('vehicle_type_id', $request->vehicle_type);
+        }
+        if ($request->filled('destination')) {
+            $query->where('destination', $request->destination);
+        }
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+
+            // Dealer info resolved once, reused for name / destination
+            ->addColumn('date', function ($order) {
+                return optional($order->created_at)->format('d/m/Y') ?? 'N/A';
+            })
+            ->addColumn('rate', function ($order) {
+                // Adjust to your column: rate_type / order_type / payment_mode
+                return $order->rate_type ?? $order->order_type ?? 'N/A';
+            })
+            ->addColumn('delivery_date', function ($order) {
+                return $order->delivery_date
+                    ? \Carbon\Carbon::parse($order->delivery_date)->format('d/m/Y')
+                    : 'N/A';
+            })
+            ->addColumn('vehicle_type', function ($order) {
+                return $order->vehicleType?->type_name
+                    ?? $order->vehicle_type_name
+                    ?? 'N/A';
+            })
+            ->addColumn('remarks', function ($order) {
+                return $order->remarks ?? $order->priority ?? 'N/A';
+            })
+            ->addColumn('order_id', function ($order) {
+                return 'OD' . str_pad($order->id, 7, '0', STR_PAD_LEFT); // OD1009876 style
+            })
+            ->addColumn('dealer_customer', function ($order) {
+                if ($order->dealer_flag_order == 1) {
+                    return $order->dealers?->dealer_name ?? 'N/A';
+                }
+                return $order->dealer?->dealer_name ?? 'N/A';
+            })
+            ->addColumn('destination', function ($order) {
+                if ($order->dealer_flag_order == 1) {
+                    return $order->dealers?->address ?? $order->destination ?? 'N/A';
+                }
+                return $order->dealer?->address ?? $order->destination ?? 'N/A';
+            })
+            ->addColumn('vehicle_number', function ($order) {
+                return $order->vehicle_number ?? 'N/A';
+            })
+            ->addColumn('driver_number', function ($order) {
+                return $order->driver_number ?? $order->driver_mobile ?? 'N/A';
+            })
+            ->addColumn('total_quantity', function ($order) {
+                $qty = $order->orderItems
+                    ->flatMap(fn ($item) => collect($item->product_details ?? []))
+                    ->sum(fn ($d) => (float) ($d['quantity'] ?? 0));
+
+                if ($qty == 0) {
+                    $qty = $order->orderItems->sum('quantity');
+                }
+
+                return number_format($qty, 2);
+            })
+            ->addColumn('action', function ($order) {
+                $url = route('logistics.orders.show', $order->id); // adjust route
+                return '<a href="' . $url . '" class="btn btn-sm btn-light border"
+                        title="View"><i class="fa fa-eye text-primary"></i></a>';
+            })
+            ->rawColumns(['action'])
             ->make(true);
     }
     public function index()

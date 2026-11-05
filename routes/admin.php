@@ -307,7 +307,8 @@ Route::middleware('api.maintenance')->group(function () {
     Route::prefix('operations')->middleware('auth')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('operations.dashboard');
         Route::prefix('orders')->group(function () {
-            Route::get('/salesorders666666666666666666666666666666', [OperationsController::class, 'salesorders'])->name('operations.salesorders.index');
+            Route::get('/salesorders', [OperationsController::class, 'salesorders'])->name('operations.salesorders.index');
+            Route::get('/exportSalesOrders', [OperationsController::class, 'exportSalesOrders'])->name('operations.orders.exportSalesOrders');
             Route::get('/', [OperationsController::class, 'index'])->name('operations.orders.index');
             Route::get('/new', [OperationsController::class, 'new'])->name('operations.orders.new');
             Route::get('/listNew', [OperationsController::class, 'orderListNew'])->name('operations.orders.listNew');
