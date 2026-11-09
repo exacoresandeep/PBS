@@ -402,9 +402,20 @@ class DealerController extends Controller
             $today = Carbon::now()->format('Ymd');
 
             $sap_id= Product::where("id",$request->product_id)->value("sap_id");
-            $conn = odbc_connect('DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB', 'INDUS', 'Indus@123');
+            // $conn = odbc_connect('DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB', 'INDUS', 'Indus@123');
+            // if (!$conn) {
+            //     return response()->json(['error' => 'SAP Connection Failed: ' . odbc_errormsg()], 500);
+            // }
+            $conn = odbc_connect(
+                'HANAODBC',
+                'INDUS',
+                env('DB_SAP_PASSWORD')
+            );
+
             if (!$conn) {
-                return response()->json(['error' => 'SAP Connection Failed: ' . odbc_errormsg()], 500);
+                return response()->json([
+                    'error' => 'SAP Connection Failed: ' . odbc_errormsg()
+                ], 500);
             }
 
             $sql = "CALL \"PRABHU_NEW\".\"@DealerStatements_F\"('$from_date', '$to_date', '$dealerCode','$sap_id')";
