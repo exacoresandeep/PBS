@@ -380,7 +380,7 @@ class DealerController extends Controller
     }
     public function downloadLedgerF(Request $request)
     {
-
+ dd("error from here");
         try {
             $dealer = $request->user();
             if (!$dealer || !$dealer->dealer_code) {

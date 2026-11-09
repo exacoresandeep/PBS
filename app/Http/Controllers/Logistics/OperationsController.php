@@ -98,7 +98,8 @@ class OperationsController extends Controller
     {
         $query = Order::with(['dealer', 'dealers', 'orderItems.product'])
             ->whereIn('vehicle_category_id', ['2', '3'])
-            ->where('order_approved', '1')
+            ->whereNotIn('status', ['In Transit', 'Delivered'])
+            ->where('trip_allocated', '1')
             ->whereDate('created_at', '>=', now()->subDays(60));
 
         // ---- Filters from the top bar ----
@@ -108,9 +109,7 @@ class OperationsController extends Controller
         if ($request->filled('vehicle_type')) {
             $query->where('vehicle_type_id', $request->vehicle_type);
         }
-        if ($request->filled('destination')) {
-            $query->where('destination', $request->destination);
-        }
+        
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -712,7 +711,7 @@ class OperationsController extends Controller
             'dealer_name' => $dealerName,
             'dealer_code' => $dealerCode,
             'dealer_phone' => $dealerPhone,
-'product_id' => $order->product_id,
+            'product_id' => $order->product_id,
             'dealer_district' => $dealerDistrict,
             'driver_name' => $order->driver_name ?? "NA",
             'vehicle_number' => $order->vehicle_number ?? "NA",
@@ -897,7 +896,7 @@ class OperationsController extends Controller
                             'Driver Name',
                             'Yard Status',
                             'Scheme',
- 'Order Type',
+                            'Order Type',
                             'Payment Type',
                             'Billing Date',
                             'Quantity',

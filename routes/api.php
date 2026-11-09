@@ -102,18 +102,18 @@ Route::post('/sap/downloadLedger', [\App\Http\Controllers\SAPController::class, 
             Route::post('invoice-layout', [HanaController::class, 'fetchInvoiceLayout']);
             Route::middleware('auth:sanctum')->group(function () {
 		    Route::post('target', [TargetController::class, 'getDealerTargets']);
-                Route::post('store', [DealerController::class, 'store']);
-                Route::get('profile', [DealerController::class, 'getDealerProfile']);
-                Route::get('notificationList', [AuthController::class, 'notificationList']);
-    	        Route::post('updateFcmToken', [AuthController::class, 'updateFcmToken']);
-                Route::post('fileUpload', [AuthController::class, 'fileUpload']);
-    	        Route::post('reset-password', [AuthController::class, 'resetPassword']);
-                Route::get('order-types', [AuthController::class, 'getOrderTypes']);
-                Route::get('payment-terms', [AuthController::class, 'getPaymentTerms']);
-                Route::get('products', [AuthController::class, 'getProductForDealer']);
-                Route::post('product-types', [AuthController::class, 'getProductTypes']);
-                Route::get('getVehicleCategory', [AuthController::class, 'getVehicleCategory']);
-                Route::post('getVehicleTypeByCategory', [AuthController::class, 'getVehicleTypeByCategory']);
+            Route::post('store', [DealerController::class, 'store']);
+            Route::get('profile', [DealerController::class, 'getDealerProfile']);
+            Route::get('notificationList', [AuthController::class, 'notificationList']);
+            Route::post('updateFcmToken', [AuthController::class, 'updateFcmToken']);
+            Route::post('fileUpload', [AuthController::class, 'fileUpload']);
+            Route::post('reset-password', [AuthController::class, 'resetPassword']);
+            Route::get('order-types', [AuthController::class, 'getOrderTypes']);
+            Route::get('payment-terms', [AuthController::class, 'getPaymentTerms']);
+            Route::get('products', [AuthController::class, 'getProductForDealer']);
+            Route::post('product-types', [AuthController::class, 'getProductTypes']);
+            Route::get('getVehicleCategory', [AuthController::class, 'getVehicleCategory']);
+            Route::post('getVehicleTypeByCategory', [AuthController::class, 'getVehicleTypeByCategory']);
     
                 Route::prefix('orders')->group(function () {
                     Route::post('/', [DealerOrderController::class, 'store']); // Store  order

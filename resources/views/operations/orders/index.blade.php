@@ -9,11 +9,11 @@
     {{-- ---------- Filter bar ---------- --}}
     <div class="listing-sec">
         <div class="row g-3 align-items-end mb-3">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Delivery Date</label>
                 <input type="date" id="filterDeliveryDate" class="form-control">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Vehicle Type</label>
                 <select id="filterVehicleType" class="form-select">
                     <option value="">- Select Vehicle Type -</option>
@@ -22,7 +22,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Destination</label>
                 <select id="filterDestination" class="form-select">
                     <option value="">- Select Destination -</option>
@@ -31,7 +31,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-3 text-end">
+            <div class="col-md-6 text-end">
                 <button type="button" id="btnExport" class="btn btn-outline-secondary">
                     <i class="fa fa-upload"></i> Export
                 </button>
@@ -72,7 +72,7 @@ $(document).ready(function () {
         processing: true,
         serverSide: true,
         ajax: {
-            url: "{{ route('logistics.orders.getSalesOrders') }}",
+            url: "{{ route('operations.salesorders.index') }}",
             data: function (d) {
                 d.delivery_date = $("#filterDeliveryDate").val();
                 d.vehicle_type  = $("#filterVehicleType").val();
