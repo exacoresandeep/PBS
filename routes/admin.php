@@ -308,6 +308,12 @@ Route::middleware('api.maintenance')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('operations.dashboard');
         Route::prefix('orders')->group(function () {
             Route::get('/salesorders', [OperationsController::class, 'salesorders'])->name('operations.salesorders.index');
+            Route::get('/salesorders-data', [OperationsController::class, 'getSalesOrders'])->name('operations.salesorders.data');
+            Route::get('/salesorders/{id}/items',[OperationsController::class, 'getOrderItems'])->name('operations.salesorders.items');
+            Route::put('/salesorders/{id}/items',[OperationsController::class, 'updateOrderItems'])->name('operations.salesorders.items.update');
+            Route::post('/salesorders/save-priority',[OperationsController::class, 'saveOrderPriority'])->name('operations.salesorders.savePriority');
+            Route::get('/salesorders-details', [OperationsController::class, 'getSalesOrdershow'])->name('operations.salesorders.show');
+
             Route::get('/exportSalesOrders', [OperationsController::class, 'exportSalesOrders'])->name('operations.orders.exportSalesOrders');
             Route::get('/', [OperationsController::class, 'index'])->name('operations.orders.index');
             Route::get('/new', [OperationsController::class, 'new'])->name('operations.orders.new');

@@ -35,6 +35,7 @@ class Order extends Model
         'advance_attachment',
     	'billing_date',
     	'delivery_date',
+    	'delivery_priority',
         'amount',
         'total_amount',
         'additional_information',

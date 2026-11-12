@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use DB;
 use Yajra\DataTables\Facades\DataTables;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Validation\ValidationException;
 
 class OperationsController extends Controller
 {
@@ -27,89 +28,236 @@ class OperationsController extends Controller
 
         return view('operations.orders.index', compact('vehicleTypes', 'destinations'));
     }
-    public function exportSalesOrders(Request $request){
-
-    }
-    public function getSalesOrdersold(Request $request)
+    public function exportSalesOrders(Request $request)
     {
-        $orders = Order::with(['dealer', 'dealers', 'orderItems.product'])
-            ->whereIn('vehicle_category_id', ['2', '3'])
-            ->where('order_approved', '1')
-            ->orderBy('id', 'desc')
-	    ->whereDate('created_at', '>=', now()->subDays(60))
-	    ->get();
-
-        return DataTables::of($orders)
-            ->addColumn('checkbox', function ($order) {
-                return '<input type="checkbox" class="order-checkbox" value="' . $order->id . '">';
-            })
-            ->addIndexColumn()
-            ->addColumn('order_id', function ($order) {
-                return 'OD00' . $order->id;
-            })
-            ->addColumn('date', function ($order) {
-                return $order->created_at->format('d/m/Y');
-            })
-            ->addColumn('dealer_name', function ($order) {
-                if ($order->dealer_flag_order == 1) {
-                    return $order->dealers?->dealer_name ?? 'N/A'; 
-                }
-                return $order->dealer?->dealer_name ?? 'N/A';
-            })
-            ->addColumn('dealer_code', function ($order) {
-                if ($order->dealer_flag_order == 1) {
-                    return $order->dealers?->dealer_code ?? 'N/A';
-                }
-                return $order->dealer?->dealer_code ?? 'N/A';
-            })
-            ->addColumn('address', function ($order) {
-                if ($order->dealer_flag_order == 1) {
-                    return $order->dealers?->address ?? 'N/A';
-                }
-                return $order->dealer?->address ?? 'N/A';
-            })
-            ->addColumn('product_name', function ($order) {
-                return $order->orderItems->isNotEmpty() && $order->orderItems->first()->product
-                    ? $order->orderItems->first()->product->product_name
-                    : 'N/A';
-            })
-            ->addColumn('product_details', function ($order) {
-                if ($order->orderItems->isEmpty()) {
-                    return 'N/A';
-                }
-            
-                $details = collect($order->orderItems->first()->product_details)
-                    ->map(function ($detail) {
-                        $productType = \App\Models\ProductType::find($detail['product_type_id']);
-                        return 'Type Name: ' . ($productType ? $productType->type_name : 'Unknown Type') .
-                               ', Quantity: ' . $detail['quantity'];
-                    })
-                    ->implode('<br>'); 
-            
-                return $details;
-            })
-            ->addColumn('status', function ($order) {
-                return '<span class="badge bg-success">Approved</span>';
-            })
-            ->rawColumns(['checkbox','product_details','status'])
-            ->make(true);
-    }
-    public function getSalesOrders(Request $request)
-    {
-        $query = Order::with(['dealer', 'dealers', 'orderItems.product'])
-            ->whereIn('vehicle_category_id', ['2', '3'])
+        $query = Order::with([
+                'orderType',
+                'vehicleCategory',
+                'dealers.district',
+                'dealer.district',
+                'orderItems.product'
+            ])
+            ->whereIn('vehicle_category_id', [2, 3])
             ->whereNotIn('status', ['In Transit', 'Delivered'])
-            ->where('trip_allocated', '1')
+            ->where('trip_allocated', 1)
             ->whereDate('created_at', '>=', now()->subDays(60));
 
-        // ---- Filters from the top bar ----
+        // Delivery Date Filter
         if ($request->filled('delivery_date')) {
             $query->whereDate('delivery_date', $request->delivery_date);
         }
+
+        // Vehicle Type Filter
         if ($request->filled('vehicle_type')) {
             $query->where('vehicle_type_id', $request->vehicle_type);
         }
-        
+
+        // Destination Filter
+        if ($request->filled('destination')) {
+            $query->where(function ($q) use ($request) {
+
+                $q->whereHas('dealer.district', function ($districtQuery) use ($request) {
+                    $districtQuery->where('districts.id', $request->destination);
+                })
+                ->orWhereHas('dealers.district', function ($districtQuery) use ($request) {
+                    $districtQuery->where('districts.id', $request->destination);
+                });
+
+            });
+        }
+
+        // Same sorting as listing
+        $query->orderBy('delivery_date', 'asc')
+            ->orderByRaw('CASE WHEN delivery_priority = 0 THEN 1 ELSE 0 END ASC')
+            ->orderBy('delivery_priority', 'asc')
+            ->orderBy('id', 'desc');
+
+        $filename = 'sales_orders_' . date('Y-m-d_H-i-s') . '.csv';
+
+        return response()->streamDownload(function () use ($query) {
+
+            $file = fopen('php://output', 'w');
+
+            // UTF-8 BOM for Excel compatibility
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // CSV headings
+            fputcsv($file, [
+                'Date',
+                'Rate',
+                'Delivery Date',
+                'Vehicle Type',
+                'Remarks',
+                'Order ID',
+                'Dealer / Customer',
+                'Destination',
+                'Vehicle Number',
+                'Driver Number',
+                'Total Quantity'
+            ]);
+
+            $query->chunk(500, function ($orders) use ($file) {
+
+                foreach ($orders as $order) {
+
+                    // Date
+                    $date = $order->created_at
+                        ? $order->created_at->format('d/m/Y')
+                        : 'N/A';
+
+                    // Rate
+                    $rate = $order->orderType?->name ?? 'N/A';
+
+                    // Delivery Date
+                    $deliveryDate = $order->delivery_date
+                        ? \Carbon\Carbon::parse($order->delivery_date)->format('d/m/Y')
+                        : 'N/A';
+
+                    // Vehicle Type
+                    $vehicleType = $order->vehicleCategory?->vehicle_category_name ?? 'N/A';
+
+                    // Remarks
+                    $remarks = $order->order_remarks
+                        ?? $order->vehicle_remarks
+                        ?? 'N/A';
+
+                    // Order ID
+                    $orderId = 'OD' . str_pad($order->id, 7, '0', STR_PAD_LEFT);
+
+                    // Dealer / Customer
+                    if ($order->dealer_flag_order == 1) {
+                        $dealerName = $order->dealers?->dealer_name ?? 'N/A';
+                        $dealer = $order->dealers;
+                    } else {
+                        $dealerName = $order->dealer?->dealer_name ?? 'N/A';
+                        $dealer = $order->dealer;
+                    }
+
+                    // Destination
+                    $destination = $dealer?->getAttribute('district') ?? 'N/A';
+
+                    // Vehicle Number
+                    $vehicleNumber = $order->vehicle_number ?? 'N/A';
+
+                    // Driver Number
+                    $driverNumber = $order->driver_phone ?? 'N/A';
+
+                    // Total Quantity
+                    $qty = $order->orderItems
+                        ->flatMap(fn ($item) => $item->product_details ?? [])
+                        ->sum(fn ($detail) => (float) ($detail['quantity'] ?? 0));
+
+                    if ($qty == 0) {
+                        $qty = $order->orderItems->sum('total_quantity');
+                    }
+
+                    $totalQuantity = number_format($qty, 2);
+
+                    fputcsv($file, [
+                        $date,
+                        $rate,
+                        $deliveryDate,
+                        $vehicleType,
+                        $remarks,
+                        $orderId,
+                        $dealerName,
+                        $destination,
+                        $vehicleNumber,
+                        $driverNumber,
+                        $totalQuantity
+                    ]);
+                }
+            });
+
+            fclose($file);
+
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function saveOrderPriority(Request $request)
+    {
+        $validated = $request->validate([
+            'delivery_date' => ['required', 'date'],
+            'order_ids' => ['required', 'array', 'min:1'],
+            'order_ids.*' => ['required', 'integer', 'distinct'],
+        ]);
+
+        DB::transaction(function () use ($validated) {
+
+            $deliveryDate = $validated['delivery_date'];
+            $orderIds = $validated['order_ids'];
+
+            $orders = Order::whereDate('delivery_date', $deliveryDate)
+                ->whereIn('id', $orderIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            // Ensure all submitted orders belong to the selected date.
+            if ($orders->count() !== count($orderIds)) {
+                throw ValidationException::withMessages([
+                    'order_ids' => 'Some orders do not belong to this delivery date.',
+                ]);
+            }
+
+            foreach ($orderIds as $index => $orderId) {
+                Order::where('id', $orderId)
+                    ->update([
+                        'delivery_priority' => $index + 1,
+                    ]);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order priority saved successfully.',
+        ]);
+    }
+   
+    public function getSalesOrders(Request $request)
+    {
+        $query = Order::with([
+                'orderType',
+                'vehicleCategory',
+                'dealers.district',
+                'dealer.district',
+                'orderItems.product'
+            ])
+            ->whereIn('vehicle_category_id', [2, 3])
+            ->whereNotIn('status', ['In Transit', 'Delivered'])
+            ->where('trip_allocated', 1)
+            ->orderBy('delivery_date', 'asc')
+            ->orderByRaw('CASE WHEN delivery_priority = 0 THEN 1 ELSE 0 END ASC')
+            ->orderBy('delivery_priority', 'asc')
+            ->orderBy('id', 'desc')
+            ->whereDate('created_at', '>=', now()->subDays(60));
+
+        // Delivery Date Filter
+        if ($request->filled('delivery_date')) {
+            $query->whereDate('delivery_date', $request->delivery_date);
+        }
+
+        // Vehicle Type Filter
+        if ($request->filled('vehicle_type')) {
+            $query->where('vehicle_type_id', $request->vehicle_type);
+        }
+
+        // Destination Filter
+        if ($request->filled('destination')) {
+
+            $query->where(function ($q) use ($request) {
+
+                $q->whereHas('dealer.district', function ($districtQuery) use ($request) {
+                    $districtQuery->where('districts.id', $request->destination);
+                })
+                ->orWhereHas('dealers.district', function ($districtQuery) use ($request) {
+                    $districtQuery->where('districts.id', $request->destination);
+                });
+
+            });
+        }
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -119,8 +267,7 @@ class OperationsController extends Controller
                 return optional($order->created_at)->format('d/m/Y') ?? 'N/A';
             })
             ->addColumn('rate', function ($order) {
-                // Adjust to your column: rate_type / order_type / payment_mode
-                return $order->rate_type ?? $order->order_type ?? 'N/A';
+                return $order->orderType?->name ?? 'N/A';
             })
             ->addColumn('delivery_date', function ($order) {
                 return $order->delivery_date
@@ -128,12 +275,12 @@ class OperationsController extends Controller
                     : 'N/A';
             })
             ->addColumn('vehicle_type', function ($order) {
-                return $order->vehicleType?->type_name
-                    ?? $order->vehicle_type_name
-                    ?? 'N/A';
+                return $order->vehicleCategory?->vehicle_category_name ?? 'N/A';
             })
             ->addColumn('remarks', function ($order) {
-                return $order->remarks ?? $order->priority ?? 'N/A';
+                return $order->order_remarks
+                    ?? $order->vehicle_remarks
+                    ?? 'N/A';
             })
             ->addColumn('order_id', function ($order) {
                 return 'OD' . str_pad($order->id, 7, '0', STR_PAD_LEFT); // OD1009876 style
@@ -145,36 +292,143 @@ class OperationsController extends Controller
                 return $order->dealer?->dealer_name ?? 'N/A';
             })
             ->addColumn('destination', function ($order) {
-                if ($order->dealer_flag_order == 1) {
-                    return $order->dealers?->address ?? $order->destination ?? 'N/A';
-                }
-                return $order->dealer?->address ?? $order->destination ?? 'N/A';
+
+                $dealer = $order->dealer_flag_order == 1
+                    ? $order->dealers
+                    : $order->dealer;
+
+                return $dealer?->getAttribute('district') ?? 'N/A';
             })
             ->addColumn('vehicle_number', function ($order) {
                 return $order->vehicle_number ?? 'N/A';
             })
             ->addColumn('driver_number', function ($order) {
-                return $order->driver_number ?? $order->driver_mobile ?? 'N/A';
+                return $order->driver_phone ?? 'N/A';
             })
             ->addColumn('total_quantity', function ($order) {
+
                 $qty = $order->orderItems
-                    ->flatMap(fn ($item) => collect($item->product_details ?? []))
-                    ->sum(fn ($d) => (float) ($d['quantity'] ?? 0));
+                    ->flatMap(fn ($item) => $item->product_details ?? [])
+                    ->sum(fn ($detail) => (float) ($detail['quantity'] ?? 0));
 
                 if ($qty == 0) {
-                    $qty = $order->orderItems->sum('quantity');
+                    $qty = $order->orderItems->sum('total_quantity');
                 }
 
                 return number_format($qty, 2);
             })
-            ->addColumn('action', function ($order) {
-                $url = route('logistics.orders.show', $order->id); // adjust route
-                return '<a href="' . $url . '" class="btn btn-sm btn-light border"
-                        title="View"><i class="fa fa-eye text-primary"></i></a>';
+           ->addColumn('action', function ($order) {
+            return '<button type="button"
+                        class="btn btn-sm btn-light border view-order"
+                        data-id="' . $order->id . '"
+                        title="View">
+                        <i class="fa fa-eye text-primary"></i>
+                        </button>';
             })
             ->rawColumns(['action'])
             ->make(true);
     }
+    
+    public function updateOrderItems(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'details' => ['required', 'array', 'min:1'],
+            'details.*.order_item_id' => ['required', 'integer'],
+            'details.*.detail_index' => ['required', 'integer', 'min:0'],
+            'details.*.quantity' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        DB::transaction(function () use ($validated, $id) {
+
+            $order = Order::findOrFail($id);
+
+            // Get all affected order items belonging to this order
+            $itemIds = collect($validated['details'])
+                ->pluck('order_item_id')
+                ->unique()
+                ->values();
+
+            $orderItems = $order->orderItems()
+                ->whereIn('id', $itemIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            foreach ($validated['details'] as $detail) {
+
+                $orderItem = $orderItems->get($detail['order_item_id']);
+
+                if (!$orderItem) {
+                    throw ValidationException::withMessages([
+                        'details' => 'Invalid order item selected.',
+                    ]);
+                }
+
+                $productDetails = $orderItem->product_details ?? [];
+
+                $index = $detail['detail_index'];
+
+                if (!array_key_exists($index, $productDetails)) {
+                    throw ValidationException::withMessages([
+                        'details' => 'Invalid product detail selected.',
+                    ]);
+                }
+
+                // Update individual product quantity
+                $productDetails[$index]['quantity'] =
+                    (float) $detail['quantity'];
+
+                $orderItem->product_details = $productDetails;
+
+                // Recalculate total quantity from JSON
+                $orderItem->total_quantity = collect($productDetails)
+                    ->sum(function ($product) {
+                        return (float) ($product['quantity'] ?? 0);
+                    });
+
+                $orderItem->save();
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order quantities updated successfully.',
+        ]);
+    }
+
+    
+    public function getOrderItems($id)
+    {
+        $order = Order::with('orderItems')->findOrFail($id);
+
+        $items = [];
+
+        foreach ($order->orderItems as $orderItem) {
+
+            $productDetails = $orderItem->product_details ?? [];
+
+            foreach ($productDetails as $index => $detail) {
+
+                $items[] = [
+                    'order_item_id' => $orderItem->id,
+                    'detail_index' => $index,
+                    'product_type_id' => $detail['product_type_id'] ?? null,
+                    'product_name' => $detail['typeName'] ?? 'N/A',
+                    'quantity' => (float) ($detail['quantity'] ?? 0),
+                    'rate' => $detail['rate'] ?? 0,
+                    'totalAmount' => $detail['totalAmount'] ?? 0,
+                ];
+            }
+        }
+
+        return response()->json([
+            'order_id' => $order->id,
+            'order_number' => 'OD' . str_pad($order->id, 7, '0', STR_PAD_LEFT),
+            'items' => $items,
+            'total_quantity' => collect($items)->sum('quantity'),
+        ]);
+    }
+
     public function index()
     {
         return view('operations.order-request.index');
