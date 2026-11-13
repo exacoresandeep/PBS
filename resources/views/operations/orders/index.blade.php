@@ -3,20 +3,7 @@
 @section('content')
 
 <style>
-    /* #ordersTable tbody tr {
-        cursor: move;
-    }
-
-    #ordersTable tbody tr.ui-sortable-helper {
-        display: table;
-        background: #eaf2ff;
-    }
-
-    #ordersTable tbody tr.ui-sortable-placeholder {
-        visibility: visible !important;
-        background: #dbeafe;
-        height: 45px;
-    } */
+    
     #ordersTable tbody tr {
         cursor: grab;
     }
@@ -35,6 +22,10 @@
         visibility: visible !important;
         background: #dbeafe;
         height: 45px;
+    }
+    #ordersTable tbody tr.first-20-highlight > td {
+        background-color: #E6B800 !important;
+        color: #000 !important;
     }
 </style>
 <div class="activity-sec">
@@ -67,7 +58,21 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-6 text-end">
+            <div class="col-md-2">
+        	    <label for="vehicleStatusFilter" class="form-label">Yard Status</label>
+                <select id="vehicleStatusFilter" class="form-select">
+                    <option value="">-select-</option>
+                    <option value="Priority">Priority</option>
+                    <option value="Planning">Planning</option>
+                    <option value="Vehicle called">Vehicle called</option>
+                    <option value="Vehicle reached">Vehicle reached</option>
+                    <option value="Loading">Loading</option>
+                    <option value="Despatch">Despatch</option>
+                    <option value="Billed">Billed</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-4 text-end">
                 <button type="button" id="btnExport" class="btn btn-success">
                     <i class="fa fa-upload"></i> Export
                 </button>
@@ -89,6 +94,7 @@
                         <th>Vehicle Number</th>
                         <th>Driver Number</th>
                         <th>Total Quantity</th>
+                        <th>Yard Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -480,7 +486,7 @@ $(document).ready(function () {
                 $('#rows tr').each(function (index) {
                     if (response.items && response.items[index]) {
                         $(this).find('.product-name')
-                            .text(response.items[index].product_name || 'N/A');
+                            .text(response.items[index].type_name || 'N/A');
                     }
                 });
             },
@@ -515,6 +521,7 @@ $(document).ready(function () {
                 d.delivery_date = $("#filterDeliveryDate").val();
                 d.vehicle_type  = $("#filterVehicleType").val();
                 d.destination   = $("#filterDestination").val();
+                d.vehicle_status = $("#vehicleStatusFilter").val();
             }
         },
 
@@ -530,6 +537,31 @@ $(document).ready(function () {
             { data: "vehicle_number",  name: "vehicle_number" },
             { data: "driver_number",   orderable: false, searchable: false },
             { data: "total_quantity",  orderable: false, searchable: false },
+            {
+                data: 'vehicle_status',
+                name: 'vehicle_status',
+                render: function (data, type, row) {
+
+                    if (!data) {
+                        return '<span class="badge bg-secondary">Not Set</span>';
+                    }
+
+                    let statusColors = {
+                        'Priority': 'bg-danger',
+                        'Planning': 'bg-primary',
+                        'Vehicle called': 'bg-info',
+                        'Vehicle reached': 'bg-warning text-dark',
+                        'Loading': 'bg-success',
+                        'Despatch': 'bg-dark',
+                        'Billed': 'bg-success',
+                        'Cancelled': 'bg-secondary'
+                    };
+
+                    let color = statusColors[data] || 'bg-secondary';
+
+                    return `<span class="badge ${color}">${$('<div>').text(data).html()}</span>`;
+                }
+            },
             { data: "action",          orderable: false, searchable: false }
         ],
 
@@ -545,7 +577,16 @@ $(document).ready(function () {
         createdRow: function (row, data) {
             $(row).attr('data-order-id', data.id);
         },
+        rowCallback: function(row, data, index) {
+            let pageInfo = this.api().page.info();
+            let globalIndex = pageInfo.start + index;
 
+            if (globalIndex < 20) {
+                $(row).addClass('first-20-highlight');
+            } else {
+                $(row).removeClass('first-20-highlight');
+            }
+        },
         // Enable drag and drop after every DataTable reload.
         drawCallback: function () {
 
@@ -563,6 +604,7 @@ $(document).ready(function () {
             }
 
             let deliveryDate = $('#filterDeliveryDate').val();
+            let vehicleStatus = $('#vehicleStatusFilter').val();
 
             // Delivery date is mandatory for rearranging orders.
             if (!deliveryDate) {
@@ -578,6 +620,7 @@ $(document).ready(function () {
             if (
                 $('#filterVehicleType').val() ||
                 $('#filterDestination').val() ||
+                 vehicleStatus ||
                 api.search()
             ) {
                 return;
@@ -695,6 +738,9 @@ $(document).ready(function () {
     $('#filterVehicleType, #filterDestination').on('change', function () {
         table.ajax.reload();
     });
+    $('#vehicleStatusFilter').on('change', function () {
+        table.ajax.reload();
+    });
 
 
     // Export
@@ -703,7 +749,8 @@ $(document).ready(function () {
         var params = $.param({
             delivery_date: $("#filterDeliveryDate").val(),
             vehicle_type: $("#filterVehicleType").val(),
-            destination: $("#filterDestination").val()
+            destination: $("#filterDestination").val(),
+            vehicle_status: $('#vehicleStatusFilter').val()
         });
 
         window.location.href =

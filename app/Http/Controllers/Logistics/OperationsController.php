@@ -65,6 +65,9 @@ class OperationsController extends Controller
 
             });
         }
+        if ($request->filled('vehicle_status')) {
+            $query->where('vehicle_status', $request->vehicle_status);
+        }
 
         // Same sorting as listing
         $query->orderBy('delivery_date', 'asc')
@@ -258,6 +261,9 @@ class OperationsController extends Controller
 
             });
         }
+        if ($request->filled('vehicle_status')) {
+            $query->where('vehicle_status', $request->vehicle_status);
+        }
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -413,7 +419,7 @@ class OperationsController extends Controller
                     'order_item_id' => $orderItem->id,
                     'detail_index' => $index,
                     'product_type_id' => $detail['product_type_id'] ?? null,
-                    'product_name' => $detail['typeName'] ?? 'N/A',
+                    'type_name' => $detail['type_name'] ?? 'N/A',
                     'quantity' => (float) ($detail['quantity'] ?? 0),
                     'rate' => $detail['rate'] ?? 0,
                     'totalAmount' => $detail['totalAmount'] ?? 0,
