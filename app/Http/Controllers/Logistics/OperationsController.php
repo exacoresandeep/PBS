@@ -264,10 +264,42 @@ class OperationsController extends Controller
         if ($request->filled('vehicle_status')) {
             $query->where('vehicle_status', $request->vehicle_status);
         }
+        // ========================================
+        // Calculate cumulative quantity up to 400
+        // ========================================
 
+        $highlightIds = [];
+        $cumulativeQty = 0;
+
+        $allOrders = (clone $query)
+            ->with(['orderItems'])
+            ->get();
+
+        foreach ($allOrders as $order) {
+
+            $qty = $order->orderItems
+                ->flatMap(fn ($item) => $item->product_details ?? [])
+                ->sum(fn ($detail) => (float) ($detail['quantity'] ?? 0));
+
+            if ($qty == 0) {
+                $qty = $order->orderItems->sum('total_quantity');
+            }
+
+            if ($cumulativeQty < 400) {
+                $highlightIds[$order->id] = true;
+            }
+
+            $cumulativeQty += $qty;
+
+            if ($cumulativeQty >= 400) {
+                break;
+            }
+        }
         return DataTables::of($query)
             ->addIndexColumn()
-
+            ->addColumn('highlight_row', function ($order) use ($highlightIds) {
+                return isset($highlightIds[$order->id]);
+            })
             // Dealer info resolved once, reused for name / destination
             ->addColumn('date', function ($order) {
                 return optional($order->created_at)->format('d/m/Y') ?? 'N/A';
@@ -311,6 +343,7 @@ class OperationsController extends Controller
             ->addColumn('driver_number', function ($order) {
                 return $order->driver_phone ?? 'N/A';
             })
+            
             ->addColumn('total_quantity', function ($order) {
 
                 $qty = $order->orderItems
@@ -479,7 +512,7 @@ class OperationsController extends Controller
                     ELSE created_at
                 END DESC
             ")
-           
+            ->where('created_at', '>=', now()->subDays(30)->startOfDay())
             // ->orderByRaw('FIELD(order_approved, 2,1)')
             ->orderBy('vehicle_status');
 
@@ -504,7 +537,7 @@ class OperationsController extends Controller
             }
 
         } else {
-            $orders->whereDate('created_at', '>=', now()->subDays(60));
+            $orders->where('created_at', '>=', now()->subDays(30)->startOfDay());
         }
 
          if (!empty($vehicleStatus)) {
@@ -648,7 +681,7 @@ class OperationsController extends Controller
     {
         return view('operations.order-request.new');
     }
-    public function orderListNew(Request $request)
+    public function orderListNewOld(Request $request)
     {
        $productID = ProductHelper::getSelectedProductId();
 
@@ -863,6 +896,292 @@ class OperationsController extends Controller
                 ->rawColumns(['vehicle_status','status','action'])
                 ->make(true);
     }
+
+
+    public function orderListNew(Request $request)
+    {
+        $productID = ProductHelper::getSelectedProductId();
+
+        $statusFilter = $request->get('status');
+        $fromDate = $request->get('from_date');
+        $toDate = $request->get('to_date');
+
+        $orders = Order::query()
+            ->select('orders.*')
+            ->with([
+                'dealer',
+                'dealers.assignedRoute.employee',
+                'createdBy',
+                'vehicleCategory',
+                'sendForApprovalBy',
+            ])
+            ->whereHas('orderItems', function ($q) use ($productID) {
+                $q->where('product_id', $productID);
+            })
+            ->where(function ($query) {
+
+                $query->where(function ($subQuery) {
+                    $subQuery->where('dealer_flag_order', '1')
+                        ->whereNotIn('status', ['Pending', 'Rejected'])
+                        ->whereIn('send_for_approval', ['0', '1']);
+                })
+
+                ->orWhere(function ($subQuery) {
+                    $subQuery->whereHas('createdBy', function ($employeeQuery) {
+                        $employeeQuery->whereIn(
+                            'employee_type_id',
+                            [2, 3, 4, 5, 7]
+                        );
+                    })
+                    ->where('dealer_flag_order', '!=', '1')
+                    ->where(function ($sourceQuery) {
+                        $sourceQuery->whereNull('source')
+                            ->orWhereNotIn('source', [
+                                'lead_won',
+                                'influencer_won'
+                            ]);
+                    });
+                });
+
+            })
+            ->where(function ($q) {
+                $q->whereNull('vehicle_status')
+                    ->orWhereNotIn('vehicle_status', [
+                        'Despatch',
+                        'Cancelled'
+                    ]);
+            });
+
+        // Approval status filter
+        if ($statusFilter === 'Approved') {
+
+            $orders->where('order_approved', '1');
+
+        } elseif ($statusFilter === 'Pending') {
+
+            $orders->where(function ($query) {
+                $query->whereNull('order_approved')
+                    ->orWhereNotIn('order_approved', ['1', '2']);
+            });
+        }
+
+        // Date filter
+        if (!empty($fromDate)) {
+            $orders->where(
+                'orders.created_at',
+                '>=',
+                \Carbon\Carbon::parse($fromDate)->startOfDay()
+            );
+        }
+
+        if (!empty($toDate)) {
+            $orders->where(
+                'orders.created_at',
+                '<=',
+                \Carbon\Carbon::parse($toDate)->endOfDay()
+            );
+        }
+
+        // Default: last 60 days, preserving your existing behavior
+        if (empty($fromDate) && empty($toDate)) {
+            $orders->where(
+                'orders.created_at',
+                '>=',
+                now()->subDays(60)->startOfDay()
+            );
+        }
+
+        // Approval ordering
+        $orders->orderByRaw("
+            CASE
+                WHEN order_approved = '1' THEN 1
+                WHEN order_approved IS NULL THEN 2
+                WHEN order_approved = '2' THEN 3
+                ELSE 4
+            END
+        ");
+
+        $orders->orderByDesc(DB::raw("
+            CASE
+                WHEN order_approved = '1' THEN accepted_time
+                WHEN order_approved = '2' THEN rejected_time
+                ELSE created_at
+            END
+        "));
+
+        return DataTables::eloquent($orders)
+
+            ->filter(function ($query) use ($request) {
+
+                $search = $request->input('search.value');
+
+                if (!empty($search)) {
+
+                    $query->where(function ($q) use ($search) {
+
+                        $q->where('orders.id', 'LIKE', "%{$search}%")
+                            ->orWhere('orders.total_amount', 'LIKE', "%{$search}%")
+                            ->orWhere('orders.created_at', 'LIKE', "%{$search}%")
+
+                            ->orWhereHas('dealer', function ($d) use ($search) {
+                                $d->where('dealer_name', 'LIKE', "%{$search}%")
+                                    ->orWhere('dealer_code', 'LIKE', "%{$search}%");
+                            })
+
+                            ->orWhereHas('dealers', function ($d) use ($search) {
+                                $d->where('dealer_name', 'LIKE', "%{$search}%")
+                                    ->orWhere('dealer_code', 'LIKE', "%{$search}%");
+                            })
+
+                            ->orWhereHas('createdBy', function ($u) use ($search) {
+                                $u->where('name', 'LIKE', "%{$search}%")
+                                    ->orWhere('employee_code', 'LIKE', "%{$search}%");
+                            });
+
+                    });
+                }
+            })
+
+            ->addIndexColumn()
+
+            ->addColumn('order_date', function ($order) {
+                return $order->created_at
+                    ? $order->created_at->format('d/m/Y h:i A')
+                    : '-';
+            })
+
+            ->addColumn('approved_rejected_date', function ($order) {
+
+                if ($order->order_approved == 1 && $order->accepted_time) {
+                    return $order->accepted_time->format('d/m/Y h:i A');
+                }
+
+                if ($order->order_approved == 2 && $order->rejected_time) {
+                    return $order->rejected_time->format('d/m/Y h:i A');
+                }
+
+                return '-';
+            })
+
+            ->addColumn('order_id', function ($order) {
+                return 'OD00' . $order->id;
+            })
+
+            ->addColumn('dealer_name', function ($order) {
+
+                if ($order->created_by_dealer) {
+                    return $order->dealers?->dealer_name ?? 'N/A';
+                }
+
+                return $order->dealer?->dealer_name ?? 'N/A';
+            })
+
+            ->addColumn('district', function ($order) {
+
+                if ($order->dealers) {
+                    return $order->dealers->district ?? 'N/A';
+                }
+
+                return $order->dealer?->district ?? 'N/A';
+            })
+
+            ->addColumn('vehicle_category', function ($order) {
+                return $order->vehicleCategory?->vehicle_category_name ?? 'N/A';
+            })
+
+            ->addColumn('employee_name_code', function ($order) {
+
+                if ($order->dealer_flag_order == 1) {
+
+                    if ($order->send_for_approval == 1 && $order->sendForApprovalBy) {
+                        return 'Dhanesh Kamath - PS007';
+                    }
+
+                    if ($order->send_for_approval == 0 && $order->dealers) {
+
+                        $employee = $order->dealers
+                            ->assignedRoute?->employee;
+
+                        if ($employee) {
+                            return $employee->name . ' - ' . $employee->employee_code;
+                        }
+                    }
+
+                    return $order->dealer?->dealer_name ?? '-';
+                }
+
+                if ($order->createdBy) {
+                    return $order->createdBy->name . ' - '
+                        . $order->createdBy->employee_code;
+                }
+
+                return 'N/A';
+            })
+
+            ->addColumn('quantity', function ($order) {
+
+                $totalQuantity = 0;
+
+                foreach ($order->orderItems as $item) {
+
+                    if (is_array($item->product_details)) {
+
+                        foreach ($item->product_details as $detail) {
+                            $totalQuantity += (float) ($detail['quantity'] ?? 0);
+                        }
+                    }
+                }
+
+                return number_format($totalQuantity, 2, '.', '');
+            })
+
+            ->addColumn('status', function ($order) {
+
+                if ($order->order_approved == 1) {
+                    return '<span class="badge bg-success">Approved</span>';
+                }
+
+                if ($order->order_approved == 2) {
+                    return '<span class="badge bg-danger">Rejected</span>';
+                }
+
+                return '<span class="badge bg-warning">Pending</span>';
+            })
+
+            ->addColumn('vehicle_status', function ($order) {
+                return !empty($order->vehicle_status)
+                    ? '<span class="badge bg-success">' . e($order->vehicle_status) . '</span>'
+                    : 'NA';
+            })
+
+            ->addColumn('vehicle_remarks', function ($order) {
+
+                if (!empty($order->vehicle_remarks)) {
+
+                    $words = explode(' ', $order->vehicle_remarks);
+
+                    if (count($words) > 6) {
+                        return implode(' ', array_slice($words, 0, 6)) . '...';
+                    }
+
+                    return $order->vehicle_remarks;
+                }
+
+                return 'NA';
+            })
+
+            ->addColumn('action', function ($order) {
+
+                return '<button class="btn btn-info btn-sm view-order"
+                            data-id="' . $order->id . '" title="View">
+                            <i class="fa fa-eye"></i>
+                        </button>';
+            })
+
+            ->rawColumns(['vehicle_status', 'status', 'action'])
+            ->make(true);
+    }
+
     public function viewOrder($id)
     {
         

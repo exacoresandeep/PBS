@@ -3,7 +3,56 @@
 @section('content')
 
 <style>
+    .status-not-set {
+    background: #807e7e;
+    color: #ffffff;
+    }
+
+    .status-priority {
+    background: #B91C1C;
+    color: #ffffff;
+    }
     
+    .status-planning {
+    background: hsl(273, 96%, 18%);
+    color: #ffffff;
+    }
+    
+    .status-vehicle-called {
+    background: #6D28D9;
+    color: #6D28D9;
+    }
+    
+    .status-vehicle-reached {
+    background: #0E7490;
+    color: #ffffff;
+    }
+    
+    .status-loading {
+    background: #C2410C;
+    color: #ffffff;
+    }
+    
+    .status-despatch {
+    background: #15803D;
+    color: #ffffff;
+    }
+    
+    .status-order-changed {
+    background: #B45309;
+    color: #ffffff;
+    }
+    
+    .status-cancelled {
+    background: #475569;
+    color: #ffffff;
+    }
+    .first-20-highlight {
+        background-color: #f3e51f !important;
+    }
+    .first-20-highlight td {
+        background-color: #f3e51f !important;
+    }
     #ordersTable tbody tr {
         cursor: grab;
     }
@@ -23,10 +72,7 @@
         background: #dbeafe;
         height: 45px;
     }
-    #ordersTable tbody tr.first-20-highlight > td {
-        background-color: #E6B800 !important;
-        color: #000 !important;
-    }
+   
 </style>
 <div class="activity-sec">
     <div class="inner-header button-align mb-2">
@@ -68,7 +114,7 @@
                     <option value="Vehicle reached">Vehicle reached</option>
                     <option value="Loading">Loading</option>
                     <option value="Despatch">Despatch</option>
-                    <option value="Billed">Billed</option>
+                    <option value="Order Changed">Order Changed</option>
                     <option value="Cancelled">Cancelled</option>
                 </select>
             </div>
@@ -537,31 +583,58 @@ $(document).ready(function () {
             { data: "vehicle_number",  name: "vehicle_number" },
             { data: "driver_number",   orderable: false, searchable: false },
             { data: "total_quantity",  orderable: false, searchable: false },
+            // {
+            //     data: 'vehicle_status',
+            //     name: 'vehicle_status',
+            //     render: function (data, type, row) {
+
+            //         if (!data) {
+            //             return '<span class="badge bg-secondary">Not Set</span>';
+            //         }
+
+            //         let statusColors = {
+            //             'Priority': 'bg-danger',
+            //             'Planning': 'bg-primary',
+            //             'Vehicle called': 'bg-info',
+            //             'Vehicle reached': 'bg-warning text-dark',
+            //             'Loading': 'bg-success',
+            //             'Despatch': 'bg-dark',
+            //             'Order Changed': 'bg-success',
+            //             'Cancelled': 'bg-secondary'
+            //         };
+
+            //         let color = statusColors[data] || 'bg-secondary';
+
+            //         return `<span class="badge ${color}">${$('<div>').text(data).html()}</span>`;
+            //     }
+            // },
             {
                 data: 'vehicle_status',
                 name: 'vehicle_status',
                 render: function (data, type, row) {
 
                     if (!data) {
-                        return '<span class="badge bg-secondary">Not Set</span>';
+                        return '<span class="badge status-not-set">Not Set</span>';
                     }
 
-                    let statusColors = {
-                        'Priority': 'bg-danger',
-                        'Planning': 'bg-primary',
-                        'Vehicle called': 'bg-info',
-                        'Vehicle reached': 'bg-warning text-dark',
-                        'Loading': 'bg-success',
-                        'Despatch': 'bg-dark',
-                        'Billed': 'bg-success',
-                        'Cancelled': 'bg-secondary'
+                    let statusClasses = {
+                        'Priority': 'status-priority',
+                        'Planning': 'status-planning',
+                        'Vehicle called': 'status-vehicle-called',
+                        'Vehicle reached': 'status-vehicle-reached',
+                        'Loading': 'status-loading',
+                        'Despatch': 'status-despatch',
+                        'Order Changed': 'status-order-changed',
+                        'Cancelled': 'status-cancelled'
                     };
 
-                    let color = statusColors[data] || 'bg-secondary';
+                    let cssClass = statusClasses[data] || 'status-cancelled';
 
-                    return `<span class="badge ${color}">${$('<div>').text(data).html()}</span>`;
+                    let safeText = $('<div>').text(data).html();
+
+                    return `<span class="badge ${cssClass}">${safeText}</span>`;
                 }
-            },
+                },
             { data: "action",          orderable: false, searchable: false }
         ],
 
@@ -578,14 +651,7 @@ $(document).ready(function () {
             $(row).attr('data-order-id', data.id);
         },
         rowCallback: function(row, data, index) {
-            let pageInfo = this.api().page.info();
-            let globalIndex = pageInfo.start + index;
-
-            if (globalIndex < 20) {
-                $(row).addClass('first-20-highlight');
-            } else {
-                $(row).removeClass('first-20-highlight');
-            }
+            $(row).toggleClass('first-20-highlight', data.highlight_row == true);
         },
         // Enable drag and drop after every DataTable reload.
         drawCallback: function () {

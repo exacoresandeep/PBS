@@ -36,7 +36,7 @@
                 <option value="Vehicle reached">Vehicle reached</option>
                 <option value="Loading">Loading</option>
                 <option value="Despatch">Despatch</option>
-                <option value="Billed">Billed</option>
+                <option value="Order Changed">Order Changed</option>
                 <option value="Cancelled">Cancelled</option>
             </select>
     	</div>

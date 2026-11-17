@@ -83,5 +83,9 @@ protected $table = 'dealers';
     {
         return $this->hasMany(DealerRouteAssignment::class, 'dealer_id', 'id');
     }
+    public function assignedRoute()
+    {
+        return $this->belongsTo(AssignRoute::class, 'assigned_route_id');
+    }
 
 }
