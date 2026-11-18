@@ -378,37 +378,71 @@ class HanaController extends Controller
                
 
         try {
-
-
-            $conn = new PDO(
-                'odbc:HANAODBC',
+            $conn = odbc_connect(
+                'DRIVER=HDBODBC;SERVERNODE=192.168.0.9:30015;SERVERDB=NDB',
                 'INDUS',
-                'Indus@123',
-                [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                ]
+                'Indus@123'
             );
-            // ✅ FIXED: credit note quoted + date format corrected
+
+            if (!$conn) {
+                throw new \Exception('SAP Connection Failed: ' . odbc_errormsg());
+            }
+
+            $credit_note_no = str_replace("'", "''", $credit_note_no);
+
             $sql = 'CALL "PRABHU_NEW"."MobileApp_CreditNote_New_Param_v2"('
-                . '\'' . $credit_note_no . '\', '
-                . '\'' . $date . '\')';
+                . "'" . $credit_note_no . "', "
+                . "'" . $date . "'"
+                . ')';
 
             $result = odbc_exec($conn, $sql);
+
             if (!$result) {
                 $error = odbc_errormsg($conn);
                 odbc_close($conn);
 
                 Log::error('SAP HANA credit note procedure failed', [
+                    'sql' => $sql,
                     'error' => $error,
                 ]);
-
                 return response()->json([
                     'status'  => 'error',
                     'code'    => 500,
                     'message' => 'Failed to fetch credit note data.',
                 ], 500);
+
+                //throw new \Exception("SAP Query Failed: $error");
             }
+
+            // $conn = new PDO(
+            //     'odbc:HANAODBC',
+            //     'INDUS',
+            //     'Indus@123',
+            //     [
+            //         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            //         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            //     ]
+            // );
+            // // ✅ FIXED: credit note quoted + date format corrected
+            // $sql = 'CALL "PRABHU_NEW"."MobileApp_CreditNote_New_Param_v2"('
+            //     . '\'' . $credit_note_no . '\', '
+            //     . '\'' . $date . '\')';
+
+            // $result = odbc_exec($conn, $sql);
+            // if (!$result) {
+            //     $error = odbc_errormsg($conn);
+            //     odbc_close($conn);
+
+            //     Log::error('SAP HANA credit note procedure failed', [
+            //         'error' => $error,
+            //     ]);
+
+            //     return response()->json([
+            //         'status'  => 'error',
+            //         'code'    => 500,
+            //         'message' => 'Failed to fetch credit note data.',
+            //     ], 500);
+            // }
             $items = [];
             $data  = [];
 

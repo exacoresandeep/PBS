@@ -32,7 +32,7 @@
                 <option value="">-select-</option>
                 <option value="Priority">Priority</option>
                 <option value="Planning">Planning</option>
-                <option value="Vehicle called">Vehicle called</option>
+                <option value="Fund Credited">Fund Credited</option>
                 <option value="Vehicle reached">Vehicle reached</option>
                 <option value="Loading">Loading</option>
                 <option value="Despatch">Despatch</option>
