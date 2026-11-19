@@ -3,6 +3,30 @@
 @section('content')
 
 <style>
+    .select2-container .select2-selection--single.form-select {
+    height: 38px;
+    padding: 4px 12px;
+}
+#vehicleStatusFilter + .select2-container .select2-selection.form-select {
+    background-image: none !important;
+}
+
+.select2-container .select2-selection__rendered {
+    padding-left: 0 !important;
+}
+
+.select2-container .select2-selection__arrow {
+    height: 36px !important;
+}
+    .status-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+   
     .status-not-set {
     background: #807e7e;
     color: #ffffff;
@@ -291,7 +315,44 @@
 @section('scripts')
 <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.min.js"></script>
 <script>
+    
 $(document).ready(function () {
+    function formatVehicleStatus(option) {
+    if (!option.id) {
+        return option.text;
+    }
+
+    let className = {
+        'Priority': 'status-priority',
+        'Planning': 'status-planning',
+        'Fund Credited': 'status-fund-credited',
+        'Vehicle reached': 'status-vehicle-reached',
+        'Loading': 'status-loading',
+        'Despatch': 'status-despatch',
+        'Order Changed': 'status-order-changed',
+        'Cancelled': 'status-cancelled'
+    }[option.text];
+
+    return $(`
+        <span>
+            <span class="status-dot ${className}"></span>
+            ${option.text}
+        </span>
+    `);
+}
+
+$('#vehicleStatusFilter').select2({
+    templateResult: formatVehicleStatus,
+    templateSelection: formatVehicleStatus,
+    escapeMarkup: function(markup) {
+        return markup;
+    },
+    width: '100%'
+});
+$('#vehicleStatusFilter')
+    .next('.select2-container')
+    .find('.select2-selection')
+    .addClass('form-select');
 
     $(document).on('input', '.qty-input', function () {
 
