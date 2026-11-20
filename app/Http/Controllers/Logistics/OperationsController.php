@@ -654,8 +654,9 @@ class OperationsController extends Controller
                 })
                 ->addColumn('vehicle_status', function ($order) {
                    
-                    return ($order->vehicle_status != "")? '<span class="badge bg-success">'.$order->vehicle_status.'</span>' : "NA";
-                    
+                     return !empty($order->vehicle_status)
+                    ? $order->vehicle_status
+                    : 'NA';
                 })
                 ->addColumn('vehicle_remarks', function ($order) {
                     if (!empty($order->vehicle_remarks)) {

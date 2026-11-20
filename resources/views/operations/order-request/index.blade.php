@@ -1,6 +1,42 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    .status-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .status-priority { background: #B91C1C; }
+    .status-planning { background: hsl(273, 96%, 18%); }
+    .status-fund-credited { background: #6D28D9; }
+    .status-vehicle-reached { background: #0E7490; }
+    .status-loading { background: #C2410C; }
+    .status-despatch { background: #15803D; }
+    .status-order-changed { background: #B45309; }
+    .status-cancelled { background: #475569; }
+
+    .select2-container .select2-selection--single.form-select {
+        height: 38px;
+        padding: 4px 12px;
+    }
+
+    #vehicleStatusFilter + .select2-container
+    .select2-selection.form-select {
+        background-image: none !important;
+    }
+
+    .select2-container .select2-selection__rendered {
+        padding-left: 0 !important;
+    }
+
+    .select2-container .select2-selection__arrow {
+        height: 36px !important;
+    }
+</style>
 <div class="activity-sec">
     <div class="inner-header button-align">
         <h3>Order Management</h3>
@@ -27,8 +63,9 @@
         	</select>
     	</div>
         <div class="me-2">
-        	<label for="vehicleStatusFilter" class="form-label">Yard Status:</label>
-        	<select id="vehicleStatusFilter" class="form-select" style="width: 200px;">
+            <label for="vehicleStatusFilter" class="form-label">Yard Status:</label>
+            <br>
+            <select id="vehicleStatusFilter" class="form-select" style="width: 200px;">
                 <option value="">-select-</option>
                 <option value="Priority">Priority</option>
                 <option value="Planning">Planning</option>
@@ -39,7 +76,7 @@
                 <option value="Order Changed">Order Changed</option>
                 <option value="Cancelled">Cancelled</option>
             </select>
-    	</div>
+        </div>
     <div>
         <button id="exportFiltered" class="btn btn-primary">Export</button>
     </div>
@@ -73,7 +110,46 @@
 @endsection
 @section('scripts')
 <script>
+    
     $(document).ready(function() {
+    function formatVehicleStatus(option) {
+
+    if (!option.id) {
+        return option.text;
+    }
+
+    let className = {
+        'Priority': 'status-priority',
+        'Planning': 'status-planning',
+        'Fund Credited': 'status-fund-credited',
+        'Vehicle reached': 'status-vehicle-reached',
+        'Loading': 'status-loading',
+        'Despatch': 'status-despatch',
+        'Order Changed': 'status-order-changed',
+        'Cancelled': 'status-cancelled'
+    }[option.text];
+
+    return $(`
+        <span>
+            <span class="status-dot ${className || ''}"></span>
+            ${option.text}
+        </span>
+    `);
+}
+
+$('#vehicleStatusFilter').select2({
+    templateResult: formatVehicleStatus,
+    templateSelection: formatVehicleStatus,
+    escapeMarkup: function(markup) {
+        return markup;
+    },
+    width: '200px'
+});
+
+$('#vehicleStatusFilter')
+    .next('.select2-container')
+    .find('.select2-selection')
+    .addClass('form-select');
        var table =  $('#ordersTable').DataTable({
             processing: true,
             serverSide: true,
@@ -97,7 +173,31 @@
                 { data: 'employee_name_code', name: 'employee_name_code' },
                 { data: 'quantity', name: 'quantity' },
                 { data: 'status', name: 'status' },
-                { data: 'vehicle_status', name: 'vehicle_status' },
+                { data: 'vehicle_status', name: 'vehicle_status',
+                    render: function (data, type, row) {
+
+                        if (!data) {
+                            return '<span class="badge status-not-set">Not Set</span>';
+                        }
+
+                        let statusClasses = {
+                            'Priority': 'status-priority',
+                            'Planning': 'status-planning',
+                            'Fund Credited': 'status-fund-credited',
+                            'Vehicle reached': 'status-vehicle-reached',
+                            'Loading': 'status-loading',
+                            'Despatch': 'status-despatch',
+                            'Order Changed': 'status-order-changed',
+                            'Cancelled': 'status-cancelled'
+                        };
+
+                        let cssClass = statusClasses[data] || 'status-cancelled';
+
+                        let safeText = $('<div>').text(data).html();
+
+                        return `<span class="badge ${cssClass}">${safeText}</span>`;
+                    }
+                },
                 { data: 'vehicle_remarks', name: 'vehicle_remarks' },
                 { data: 'action', name: 'action', orderable: false, searchable: false }
             ],
